@@ -1,0 +1,14 @@
+﻿  stdafx.cpp
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(77): error C2143: 语法错误: 缺少“;”(在“*”的前面)
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(77): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(77): error C2238: 意外的标记位于“;”之前
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(78): error C2143: 语法错误: 缺少“;”(在“*”的前面)
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(78): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(78): error C2238: 意外的标记位于“;”之前
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(79): error C2143: 语法错误: 缺少“;”(在“*”的前面)
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(79): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\common.h(79): error C2238: 意外的标记位于“;”之前
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\coordinatemap.h(9): error C2143: 语法错误: 缺少“;”(在“*”的前面)
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\coordinatemap.h(9): error C4430: 缺少类型说明符 - 假定为 int。注意: C++ 不支持默认 int
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\coordinatemap.h(9): error C2238: 意外的标记位于“;”之前
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\glog\log_severity.h(51): fatal error C1189: #error:  ERROR macro is defined. Define GLOG_NO_ABBREVIATED_SEVERITIES before including logging.h. See the document for detail.
