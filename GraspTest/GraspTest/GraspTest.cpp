@@ -10,12 +10,7 @@
 #include <process.h>
 #include <Windows.h>
 
-struct Graphics
-{
-	RGBQUAD *Rgba;
-	UINT16	*depth;
-	UINT16	*depth2;
-};
+
 
 //全局变量
 Graphics			*Graph = NULL;
@@ -42,9 +37,9 @@ GT_RES	InitGT(std::string Caffe_Path)
 	HeventNN = CreateEvent(NULL, FALSE, FALSE, NULL);
 	//初始化并启动Kinect
 	Graph = new Graphics;
-	Graph->Rgba = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
-	Graph->depth = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
-	Graph->depth2 = new UINT16[COLORWIDTH*COLORHEIGHT];
+	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 	Kinect = new KinectDriver;
 	res_val = Kinect->OpenKinect();
 	if (res_val != GT_RES_OK)
@@ -73,7 +68,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE);
 	if (NNet != NULL)
 	{
-		printf("Nueral Network Init failed.\n", res_val);
+		printf("Nueral Network Init failed with error:%02x.\n", res_val);
 		return GT_RES_ERROR;
 	}
 	return GT_RES_OK;
@@ -118,8 +113,9 @@ GT_RES	UinitGT()
 		return GT_RES_DEVICENOTREADY;
 	}
 	//uninitialize NN
-	delete [] Graph->Rgba;
-	delete [] Graph->depth;
+	delete Graph->DepthImg;
+	delete Graph->ColorImg;
+	delete Graph->DepthInColorImg;
 	delete Kinect;
 	delete UR5;
 	delete Graph;
@@ -262,7 +258,7 @@ unsigned __stdcall ThreadNN(void *param)
 	return 0;
 }
 
-#if 0
+#if 1
 int main()
 {
 	GT_RES	res_val;

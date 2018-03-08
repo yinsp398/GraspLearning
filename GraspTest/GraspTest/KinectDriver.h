@@ -1,7 +1,7 @@
 #pragma once
 #include "Common.h"
 #include <Kinect.h>
-
+#include <opencv2/core/core.hpp>
 struct Graphics;
 
 
@@ -33,10 +33,22 @@ private:
 
 	//释放Kinect
 	GT_RES	UInitKinect();
-#if 0
-	//彩色图像转化为灰度图
-	GT_RES	RGBA2G(int Width, int Heigh, Graphics *Graph, RGBQUAD *pBuffer);
-#endif
+
+	//获取彩色图像
+	GT_RES	GetColorImage(RGBQUAD *ColorImg);
+
+	//获取深度图像
+	GT_RES	GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg);
+
+	//转换深度图到Mat格式
+	GT_RES	DepthConvertMat(const UINT16* pBuffer, cv::Mat *pImg);
+
+	//转换彩色图到Mat格式
+	GT_RES	RGBConvertMat(const BYTE* pBuffer, cv::Mat *pImg);
+
+	//转换彩色图到灰度图
+	GT_RES	RGBAConvertG(BYTE *pGray, const RGBQUAD *pBuffer, const unsigned int Width, const unsigned int Height);
+
 	// Safe release for interfaces
 	template<class Interface>
 	inline void SafeRelease(Interface *& pInterfaceToRelease)

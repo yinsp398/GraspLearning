@@ -1,4 +1,8 @@
 #pragma once
+
+namespace cv{
+class Mat;
+}
 /*********************************************************************/
 //一些基础的宏定义
 
@@ -39,6 +43,8 @@
 
 #define		COLORGRAPHWIDE					60							//局部彩色图像宽度
 #define		COLORGRAPHHEIGHT				60							//局部彩色图像高度
+#define		DEPTHGRAPHWIDE					20							//局部深度图像宽度
+#define		DEPTHGRAPHHEIGHT				20							//局部深度图像高度
 
 
 #define		PI								3.14159265359
@@ -63,7 +69,7 @@
 #define		COLOR2ROBOT34					1	
 #define		ANGLEBIAS						0							//抓取角度从图像到机器人坐标系的偏置
 
-			
+#define		IMAGEFORMAT						CV_8UC1						//图像在cv mat中的存储格式，0~255，一个通道的灰度图
 
 struct GraspPose
 {
@@ -72,7 +78,12 @@ struct GraspPose
 	double theta;
 };
 
-
+struct Graphics
+{
+	cv::Mat *ColorImg;
+	cv::Mat *DepthImg;
+	cv::Mat *DepthInColorImg;
+};
 
 
 

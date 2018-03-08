@@ -4,13 +4,6 @@
 #include "CoordinateMap.h"
 #include <Kinect.h>
 
-struct Graphics
-{
-	RGBQUAD *Rgba;
-	UINT16	*depth;
-	UINT16	*depth2;
-};
-
 NN::NN(	const std::string & model_file,
 		const std::string & trained_file,
 		const std::string & mean_file)
@@ -23,9 +16,9 @@ NN::NN(	const std::string & model_file,
 	*m_pUpdateTime = time(NULL);
 	ImageCnt = 0;
 	m_pGraph = new Graphics;
-	(m_pGraph->Rgba) = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
-	(m_pGraph->depth2) = new UINT16[COLORWIDTH*COLORHEIGHT];
-	(m_pGraph->depth) = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 
 }
 
@@ -35,9 +28,9 @@ NN::~NN()
 	delete m_ppos;
 	delete m_pposes;
 	delete m_pUpdateTime;
-	delete[](m_pGraph->Rgba);
-	delete[](m_pGraph->depth2);
-	delete[](m_pGraph->depth);
+	delete m_pGraph->DepthImg;
+	delete m_pGraph->ColorImg;
+	delete m_pGraph->DepthInColorImg;
 	delete m_pGraph;
 
 }
@@ -51,18 +44,16 @@ GT_RES	NN::UpdateParam(std::string trained_file, std::string mean_file)
 
 //Update graphics
 GT_RES	NN::UpdateGraphics(Graphics * graph)
-{
-	GT_RES	res;
-	
+{	
 	if (graph == NULL)
 	{
 		printf("Have no graphics.\n");
 		return GT_RES_ERROR;
 	}
-	// memory copy from graph to m_pGraph
-	memcpy(this->m_pGraph->Rgba, graph->Rgba, sizeof(RGBQUAD)*COLORWIDTH*COLORHEIGHT);
-	memcpy(this->m_pGraph->depth, graph->depth, sizeof(UINT16)*DEPTHWIDTH*DEPTHHEIGHT);
-	memcpy(this->m_pGraph->depth2, graph->depth2, sizeof(UINT16)*COLORWIDTH*COLORHEIGHT);
+	// deeply copy from graph to m_pGraph
+	m_pGraph->ColorImg = &(graph->ColorImg->clone());
+	m_pGraph->DepthImg = &(graph->DepthImg->clone());
+	m_pGraph->DepthInColorImg = &(graph->DepthInColorImg->clone());
 
 	return GT_RES_OK;
 }
@@ -77,12 +68,14 @@ GT_RES	NN::NNRun()
 		UpdateParam(TRAINEDFILE, MEANFILE);
 		*m_pUpdateTime = time(NULL);
 	}
-	if (m_pImage == NULL)
+	if (m_pGraph == NULL)
 	{
 		printf("The pointer to image is NULL.\n");
 		return GT_RES_ERROR;
 	}
 	//这里先采用最简单直接的方式，直接暴力找，之后调通了再修改优化这里
+	//直接使用彩色图像，之后再考虑深度图像
+	cv::Mat *pImage = m_pGraph->ColorImg;
 	GraspPose pos;
 	for (int i = 0; i < 50; i++)
 	{
@@ -91,8 +84,8 @@ GT_RES	NN::NNRun()
 			printf("Get random pose failed with error: %02x.\n", res);
 			return res;
 		}
-		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, m_pImage->type(), cv::Scalar(0, 0, 0));
-		if ((res = GetSubImage(&pos, m_pImage, &SubImage)) != GT_RES_OK)
+		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, pImage->type(), cv::Scalar(0, 0, 0));
+		if ((res = GetSubImage(&pos, pImage, &SubImage)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
 			return res;
@@ -181,8 +174,9 @@ GT_RES	NN::GetPose(Pose3D *pos)
 	if (m_ppos)
 	{
 		//save the subimage about the m_ppos to file
-		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, m_pImage->type(), cv::Scalar(0, 0, 0));
-		if ((res = GetSubImage(&m_ppos->first, m_pImage, &SubImage)) != GT_RES_OK)
+		cv::Mat* pImage =m_pGraph->ColorImg;
+		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, pImage->type(), cv::Scalar(0, 0, 0));
+		if ((res = GetSubImage(&m_ppos->first, pImage, &SubImage)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
 			return res;
@@ -203,7 +197,7 @@ GT_RES	NN::GetPose(Pose3D *pos)
 		out << m_ppos->second<<std::endl;
 		out.close();
 
-		float depth = m_pGraph->depth2[(m_ppos->first.x*COLORHEIGHT + m_ppos->first.y)];
+		float depth = m_pGraph->DepthInColorImg->at<uchar>(m_ppos->first.y, m_ppos->first.x);
 		res = m_pCoordinateMap->ColorDepth2Robot(m_ppos->first,depth,*pos);
 		m_pposes->clear();
 		ImageCnt++;

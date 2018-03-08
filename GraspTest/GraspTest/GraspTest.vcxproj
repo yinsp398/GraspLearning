@@ -172,17 +172,6 @@
     <ClCompile Include="NN.cpp" />
     <ClCompile Include="RobotDriver.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Caffe_Windows\caffe\scripts\build\src\caffe\caffe.vcxproj">
-      <Project>{fd412515-edd9-3268-86e1-f80d36b14d1e}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Caffe_Windows\caffe\scripts\build\src\caffe\caffeproto.vcxproj">
-      <Project>{22d6c34e-0cd4-3f79-84d2-d05cb3e2f606}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Caffe_Windows\caffe\scripts\build\ZERO_CHECK.vcxproj">
-      <Project>{7f921914-5e12-388c-8c2e-78ad092f976c}</Project>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
