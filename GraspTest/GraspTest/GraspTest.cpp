@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "Common.h"
 #include <process.h>
+#include <Windows.h>
 
 struct Graphics
 {

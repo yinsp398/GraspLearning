@@ -108,7 +108,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_WINSOCKAPI_;_DEBUG;_CONSOLE;WIN32;_WINDOWS;CAFFE_VERSION=1.0.0;BOOST_ALL_NO_LIB;USE_LMDB;USE_LEVELDB;CPU_ONLY;USE_OPENCV;CMAKE_WINDOWS_BUILD;GLOG_NO_ABBREVIATED_SEVERITIES;GOOGLE_GLOG_DLL_DECL=__declspec(dllimport);GOOGLE_GLOG_DLL_DECL_FOR_UNITTESTS=__declspec(dllimport);H5_BUILT_AS_DYNAMIC_LIB=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\UR5\;E:\Work\4_UR5_Project\2_Code\Caffe_Windows\caffe\scripts\build\include;E:\Work\4_UR5_Project\2_Code\Caffe_Windows\caffe\scripts\build;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\boost-1_61;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv;E:\Work\4_UR5_Project\2_Code\Caffe_Windows\caffe\src\;E:\Work\4_UR5_Project\2_Code\Caffe_Windows\caffe\include;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\caffe_include;..\UR5;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\boost-1_61;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv;C:\Users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
