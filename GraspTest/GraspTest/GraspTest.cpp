@@ -258,7 +258,7 @@ unsigned __stdcall ThreadNN(void *param)
 	return 0;
 }
 
-#if 1
+#if 0
 int main()
 {
 	GT_RES	res_val;
@@ -292,7 +292,6 @@ int main()
 #else
 int main()
 {
-	//test initiliazation
 	GT_RES	res_val;
 	pos = new Pose3D;
 	//分配event
@@ -301,9 +300,9 @@ int main()
 	HeventNN = CreateEvent(NULL, FALSE, FALSE, NULL);
 	//初始化并启动Kinect
 	Graph = new Graphics;
-	Graph->Rgba = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
-	Graph->depth = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
-	Graph->depth2 = new UINT16[COLORWIDTH*COLORHEIGHT];
+	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 	Kinect = new KinectDriver;
 	res_val = Kinect->OpenKinect();
 	if (res_val != GT_RES_OK)
@@ -311,14 +310,14 @@ int main()
 		printf("Kinect Init failed with error:%02x\n", res_val);
 		return res_val;
 	}
-	//初始化并启动UR5机器人
-	UR5 = new RobotDriver;
-	res_val = UR5->OpenUR();
+	//Load and save image from Kinect
+	res_val = Kinect->GetKinectImage(Graph);
 	if (res_val != GT_RES_OK)
 	{
-		printf("UR5 Init failed with error:%02x\n", res_val);
+		printf("Getting Kinect image failed with error:%02x\n", res_val);
 		return res_val;
 	}
+
 	//初始化神经网络model
 	NNet = new NN(MODELFILE, TRAINEDFILE, MEANFILE);
 	if (NNet != NULL)
@@ -326,6 +325,20 @@ int main()
 		printf("Nueral Network Init failed.\n", res_val);
 		return GT_RES_ERROR;
 	}
+	//test get randompose
+	printf("test get random pose\n");
+	std::vector<GraspPose> *vec_pos = new std::vector<GraspPose>;
+	NNet->GetRandomPoses(vec_pos);
+	for (std::vector<GraspPose>::iterator it = vec_pos->begin(); it != vec_pos->end(); ++it)
+	{
+		printf("x:%f,y:%f,theta:%f\n", it->x, it->y, it->theta);
+	}
+	//test get subimage
+	printf("Test Get subimage\n");
+	cv::Mat SubImg(COLORGRAPHHEIGHT, COLORGRAPHWIDE, IMAGEFORMAT);
+	NNet->GetSubImage(&((*vec_pos)[1]), Graph->ColorImg, &SubImg);
+	cv::imwrite("SubImg.jpg",SubImg);
+	cv::imwrite("Img.jpg", *(Graph->ColorImg));
 	return GT_RES_OK;
 }
 #endif

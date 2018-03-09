@@ -1,8 +1,7 @@
 #pragma once
 
-namespace cv{
-class Mat;
-}
+#include <opencv2\core\core.hpp>
+#include <opencv2\imgcodecs.hpp>
 /*********************************************************************/
 //一些基础的宏定义
 
