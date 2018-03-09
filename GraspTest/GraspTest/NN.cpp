@@ -8,7 +8,7 @@ NN::NN(	const std::string & model_file,
 		const std::string & trained_file,
 		const std::string & mean_file)
 {
-	m_pClassifier = new Classifier(model_file, trained_file, mean_file );
+	//m_pClassifier = new Classifier(model_file, trained_file, mean_file );
 	m_ppos = new std::pair<GraspPose, float>;
 	m_pposes = new std::vector<std::pair<GraspPose, float> >;
 	srand((unsigned)time(NULL));											//initialize the rand seed by time stamp
@@ -112,7 +112,7 @@ GT_RES	NN::GetSubImage(GraspPose *pos, cv::Mat *ImgIn, cv::Mat *ImgOut)
 		return GT_RES_ERROR;
 	}
 	//确保二者尺寸一致
-	if (ImgIn->size() != ImgOut->size() || ImgIn->type() != ImgOut->type())
+	if (ImgIn->type() != ImgOut->type())
 	{
 		printf("The size or type of ImgIn and ImgOut are not consistent.\n");
 		return GT_RES_ERROR;
