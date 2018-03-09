@@ -11,7 +11,6 @@
 #include <Windows.h>
 
 
-
 //全局变量
 Graphics			*Graph = NULL;
 KinectDriver		*Kinect = NULL;
@@ -258,7 +257,7 @@ unsigned __stdcall ThreadNN(void *param)
 	return 0;
 }
 
-#if 1
+#if 0
 int main()
 {
 	GT_RES	res_val;
@@ -294,16 +293,11 @@ int main()
 {
 	//test initiliazation
 	GT_RES	res_val;
-	pos = new Pose3D;
-	//分配event
-	HeventUR5 = CreateEvent(NULL, FALSE, FALSE, NULL);
-	HeventKinect = CreateEvent(NULL, FALSE, FALSE, NULL);
-	HeventNN = CreateEvent(NULL, FALSE, FALSE, NULL);
 	//初始化并启动Kinect
 	Graph = new Graphics;
-	Graph->Rgba = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
-	Graph->depth = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
-	Graph->depth2 = new UINT16[COLORWIDTH*COLORHEIGHT];
+	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 	Kinect = new KinectDriver;
 	res_val = Kinect->OpenKinect();
 	if (res_val != GT_RES_OK)
@@ -311,21 +305,21 @@ int main()
 		printf("Kinect Init failed with error:%02x\n", res_val);
 		return res_val;
 	}
-	//初始化并启动UR5机器人
-	UR5 = new RobotDriver;
-	res_val = UR5->OpenUR();
+	res_val = Kinect->GetKinectImage(Graph);
 	if (res_val != GT_RES_OK)
 	{
-		printf("UR5 Init failed with error:%02x\n", res_val);
+		printf("get kinectimage error:%02x\n",res_val);
 		return res_val;
 	}
-	//初始化神经网络model
-	NNet = new NN(MODELFILE, TRAINEDFILE, MEANFILE);
-	if (NNet != NULL)
-	{
-		printf("Nueral Network Init failed.\n", res_val);
-		return GT_RES_ERROR;
-	}
+	cv::imwrite("colorimg.jpg", *(Graph->ColorImg));
+	cv::imwrite("depthimg.jpg", *(Graph->DepthImg));
+	cv::imwrite("depthimg2.jpg", *(Graph->DepthInColorImg));
+	Kinect->CloseKinect();
+
+	delete Graph->DepthImg;
+	delete Graph->ColorImg;
+	delete Graph->DepthInColorImg;
+	delete Graph;
 	return GT_RES_OK;
 }
 #endif
