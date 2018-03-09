@@ -293,33 +293,23 @@ int main()
 {
 	//test initiliazation
 	GT_RES	res_val;
-	//初始化并启动Kinect
-	Graph = new Graphics;
-	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	Kinect = new KinectDriver;
-	res_val = Kinect->OpenKinect();
+	bool IsGet;
+	pos = new Pose3D;
+	//初始化并启动UR5机器人
+	UR5 = new RobotDriver;
+	res_val = UR5->OpenUR();
 	if (res_val != GT_RES_OK)
 	{
-		printf("Kinect Init failed with error:%02x\n", res_val);
+		printf("UR5 Init failed with error:%02x\n", res_val);
 		return res_val;
 	}
-	res_val = Kinect->GetKinectImage(Graph);
-	if (res_val != GT_RES_OK)
-	{
-		printf("get kinectimage error:%02x\n",res_val);
-		return res_val;
-	}
-	cv::imwrite("colorimg.jpg", *(Graph->ColorImg));
-	cv::imwrite("depthimg.jpg", *(Graph->DepthImg));
-	cv::imwrite("depthimg2.jpg", *(Graph->DepthInColorImg));
-	Kinect->CloseKinect();
-
-	delete Graph->DepthImg;
-	delete Graph->ColorImg;
-	delete Graph->DepthInColorImg;
-	delete Graph;
+	printf("UR5 init OK\n");
+	pos->Set(0,0,0,0,0,0);
+	//change pos and macro startpos
+	UR5->MoveGrasp(pos,&IsGet);
+	UR5->CloseUR();
+	delete pos;
+	delete UR5;
 	return GT_RES_OK;
 }
 #endif
