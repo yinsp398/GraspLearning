@@ -115,7 +115,7 @@ GT_RES	KinectDriver::InitKinect()
 	return GT_RES_OK;
 }
 
-GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
+GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 {
 	HRESULT hr = NULL;
 	IColorFrame *pColorFrame = NULL;
@@ -129,7 +129,7 @@ GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
 		IFrameDescription * pFrameDescription = NULL;
 		ColorImageFormat imageFormat = ColorImageFormat_None;
 		UINT nBufferSize = 0;
-		RGBQUAD *pBuffer = ColorImg;
+		RGBQUAD *pBuffer = new RGBQUAD[COLORHEIGHT*COLORWIDTH];
 		
 		if (SUCCEEDED(hr))
 		{
@@ -146,6 +146,13 @@ GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
 				nBufferSize = COLORWIDTH * COLORHEIGHT * sizeof(RGBQUAD);
 				hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
 			}
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = RGBConvertMat(pBuffer, ColorMat);
+		}
+		if (hr == GT_RES_OK)
+		{
 			return GT_RES_OK;
 		}
 	}
@@ -212,26 +219,16 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 {
 	GT_RES res;
-	RGBQUAD *ColorImg = new RGBQUAD[COLORHEIGHT*COLORWIDTH];
 	cv::Mat ColorMat(COLORHEIGHT, COLORWIDTH, CV_8UC3);
-	res = GetColorImage(ColorImg);
+	res = GetColorImage(&ColorMat);
 	if (res == GT_RES_OK)
 	{
-		res = RGBConvertMat(ColorImg, &ColorMat);
-	}	
-	if (res == GT_RES_OK)
-	{
-		cv::imwrite("test.jpg", ColorMat);
 		cvtColor(ColorMat, *(Graph->ColorImg), CV_RGB2GRAY);
 	}
 	if (res == GT_RES_OK)
 	{
 		res = GetDepthImage(Graph->DepthImg, Graph->DepthInColorImg);
 	}
-	
-
-
-	delete[]ColorImg;
 	return res;
 }
 

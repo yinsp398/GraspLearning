@@ -35,7 +35,7 @@ private:
 	GT_RES	UInitKinect();
 
 	//获取彩色图像
-	GT_RES	GetColorImage(RGBQUAD *ColorImg);
+	GT_RES	GetColorImage(cv::Mat *ColorMat);
 
 	//获取深度图像
 	GT_RES	GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat);
