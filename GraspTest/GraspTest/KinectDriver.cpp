@@ -1,6 +1,8 @@
 
 #include "KinectDriver.h"
+#include <opencv2\imgproc.hpp>
 #include <stdio.h>
+
 
 
 KinectDriver::KinectDriver()
@@ -151,7 +153,7 @@ GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
 	return GT_RES_ERROR;
 }
 
-GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg)
+GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 {
 	HRESULT hr = NULL;
 	IDepthFrame *pDepthFrame = NULL;
@@ -164,15 +166,19 @@ GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg)
 	{
 		ColorImageFormat imageFormat = ColorImageFormat_None;
 		UINT nBufferSize = 0;
-		UINT16 *pBuffer = DepthImg;
-		UINT16 *pBuffer2 = DepthInColorImg;
+		UINT16 *pBuffer = NULL;
+		UINT16 *pBuffer2 = new UINT16[COLORHEIGHT*COLORWIDTH];
 
 		if (SUCCEEDED(hr))
 		{
 			nBufferSize = DEPTHWIDTH * DEPTHHEIGHT * sizeof(UINT16);
-			hr = pDepthFrame->CopyFrameDataToArray(nBufferSize, pBuffer);
+			hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
 		}
 		if (SUCCEEDED(hr))
+		{
+			hr = DepthConvertMat(pBuffer, DepthMat);
+		}
+		if (hr == GT_RES_OK)
 		{
 			hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(DEPTHHEIGHT*DEPTHWIDTH, pBuffer, COLORWIDTH*COLORHEIGHT, m_pDepthInColorFrame);
 		}
@@ -184,9 +190,16 @@ GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg)
 				{
 					int x_tmp = m_pDepthInColorFrame[i*COLORHEIGHT + j].X;					//XandY is float ,so maybe we can use interpolation to make it more percise
 					int y_tmp = m_pDepthInColorFrame[i*COLORHEIGHT + j].Y;
-					pBuffer2[i*COLORHEIGHT + j] = pBuffer[(x_tmp * DEPTHHEIGHT + y_tmp)];
+					if (x_tmp < 0 || x_tmp >= COLORWIDTH || y_tmp < 0 || y_tmp >= COLORHEIGHT)
+						pBuffer2[i*COLORHEIGHT + j] = 0;
+					else
+						pBuffer2[i*COLORHEIGHT + j] = pBuffer[(x_tmp * DEPTHHEIGHT + y_tmp)];
 				}
 			}
+			hr = DepthConvertMat(pBuffer2, DepthInColorMat);
+		}
+		if (hr == GT_RES_OK)
+		{
 			return GT_RES_OK;
 		}
 	}
@@ -199,31 +212,26 @@ GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg)
 GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 {
 	GT_RES res;
-	RGBQUAD ColorImg[COLORHEIGHT*COLORWIDTH];
-	BYTE Gray[COLORHEIGHT*COLORWIDTH];
-	UINT16 DepthImg[DEPTHHEIGHT*DEPTHWIDTH];
-	UINT16 DepthInColorImg[COLORHEIGHT*COLORWIDTH];
+	RGBQUAD *ColorImg = new RGBQUAD[COLORHEIGHT*COLORWIDTH];
+	cv::Mat ColorMat(COLORHEIGHT, COLORWIDTH, CV_8UC3);
 	res = GetColorImage(ColorImg);
-	if (res != GT_RES_OK)
+	if (res == GT_RES_OK)
 	{
-		res = GetDepthImage(DepthImg, DepthInColorImg);
-	}
-	if (res != GT_RES_OK)
+		res = RGBConvertMat(ColorImg, &ColorMat);
+	}	
+	if (res == GT_RES_OK)
 	{
-		res = DepthConvertMat(DepthImg, Graph->DepthImg);
+		cv::imwrite("test.jpg", ColorMat);
+		cvtColor(ColorMat, *(Graph->ColorImg), CV_RGB2GRAY);
 	}
-	if (res != GT_RES_OK)
+	if (res == GT_RES_OK)
 	{
-		res = DepthConvertMat(DepthInColorImg, Graph->DepthInColorImg);
+		res = GetDepthImage(Graph->DepthImg, Graph->DepthInColorImg);
 	}
-	if (res != GT_RES_OK)
-	{
-		res = RGBAConvertG(Gray, ColorImg, COLORWIDTH, COLORHEIGHT);
-	}
-	if (res != GT_RES_OK)
-	{
-		res = RGBConvertMat(Gray, Graph->ColorImg);
-	}
+	
+
+
+	delete[]ColorImg;
 	return res;
 }
 
@@ -243,13 +251,17 @@ GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, cv::Mat *pImg)
 	return GT_RES_OK;
 }
 
-GT_RES	KinectDriver::RGBConvertMat(const BYTE* pBuffer, cv::Mat *pImg)
+GT_RES	KinectDriver::RGBConvertMat(const RGBQUAD* pBuffer, cv::Mat *pImg)
 {
 	uchar *p_mat = pImg->data;
-	const BYTE* pBufferEnd = pBuffer + (COLORWIDTH*COLORHEIGHT);
+	const RGBQUAD* pBufferEnd = pBuffer + (COLORWIDTH*COLORHEIGHT);
 	while (pBuffer < pBufferEnd)
 	{
-		*p_mat = *pBuffer;
+		*p_mat = pBuffer->rgbBlue;
+		p_mat++;
+		*p_mat = pBuffer->rgbGreen;
+		p_mat++;
+		*p_mat = pBuffer->rgbRed;
 		p_mat++;
 		++pBuffer;
 	}

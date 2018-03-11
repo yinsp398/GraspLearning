@@ -38,13 +38,13 @@ private:
 	GT_RES	GetColorImage(RGBQUAD *ColorImg);
 
 	//获取深度图像
-	GT_RES	GetDepthImage(UINT16 *DepthImg, UINT16 *DepthInColorImg);
+	GT_RES	GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat);
 
 	//转换深度图到Mat格式
 	GT_RES	DepthConvertMat(const UINT16* pBuffer, cv::Mat *pImg);
 
 	//转换彩色图到Mat格式
-	GT_RES	RGBConvertMat(const BYTE* pBuffer, cv::Mat *pImg);
+	GT_RES	RGBConvertMat(const RGBQUAD* pBuffer, cv::Mat *pImg);
 
 	//转换彩色图到灰度图
 	GT_RES	RGBAConvertG(BYTE *pGray, const RGBQUAD *pBuffer, const unsigned int Width, const unsigned int Height);
