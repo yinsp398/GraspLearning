@@ -154,6 +154,7 @@ GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 		}
 		if (hr == GT_RES_OK)
 		{
+			SafeRelease(pColorFrame);
 			return GT_RES_OK;
 		}
 	}
@@ -165,7 +166,7 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 {
 	HRESULT hr = NULL;
 	IDepthFrame *pDepthFrame = NULL;
-	if (!m_pColorFrameReader)
+	if (!m_pDepthFrameReader)
 	{
 		return GT_RES_NODEVICE;
 	}
@@ -208,6 +209,7 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 		}
 		if (hr == GT_RES_OK)
 		{
+			SafeRelease(pDepthFrame);
 			return GT_RES_OK;
 		}
 	}
