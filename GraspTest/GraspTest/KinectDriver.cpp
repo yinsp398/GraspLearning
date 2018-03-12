@@ -10,6 +10,7 @@ KinectDriver::KinectDriver()
 	InitKinect();
 	m_pDepthInColorFrame = new DepthSpacePoint[COLORWIDTH*COLORHEIGHT];
 }
+
 KinectDriver::~KinectDriver()
 {
 	CloseKinect();
@@ -149,7 +150,7 @@ GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 		}
 		if (SUCCEEDED(hr))
 		{
-			hr = RGBConvertMat(pBuffer, ColorMat);
+			hr = RGBConvertMat(pBuffer, COLORWIDTH, COLORHEIGHT, ColorMat);
 		}
 		if (hr == GT_RES_OK)
 		{
@@ -183,7 +184,7 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 		}
 		if (SUCCEEDED(hr))
 		{
-			hr = DepthConvertMat(pBuffer, DepthMat);
+			hr = DepthConvertMat(pBuffer, DEPTHWIDTH, DEPTHHEIGHT, DepthMat);
 		}
 		if (hr == GT_RES_OK)
 		{
@@ -203,7 +204,7 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 						pBuffer2[i*COLORHEIGHT + j] = pBuffer[(x_tmp * DEPTHHEIGHT + y_tmp)];
 				}
 			}
-			hr = DepthConvertMat(pBuffer2, DepthInColorMat);
+			hr = DepthConvertMat(pBuffer2, COLORWIDTH, COLORHEIGHT, DepthInColorMat);
 		}
 		if (hr == GT_RES_OK)
 		{
@@ -232,10 +233,10 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	return res;
 }
 
-GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, cv::Mat *pImg)
+GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg)
 {
 	uchar * p_mat = pImg->data;
-	const UINT16* pBufferEnd = pBuffer + (DEPTHHEIGHT*DEPTHWIDTH);
+	const UINT16* pBufferEnd = pBuffer + (nWidth*nHeight);
 	while (pBuffer < pBufferEnd)
 	{
 		USHORT depth = *pBuffer;
@@ -248,10 +249,10 @@ GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, cv::Mat *pImg)
 	return GT_RES_OK;
 }
 
-GT_RES	KinectDriver::RGBConvertMat(const RGBQUAD* pBuffer, cv::Mat *pImg)
+GT_RES	KinectDriver::RGBConvertMat(const RGBQUAD* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg)
 {
 	uchar *p_mat = pImg->data;
-	const RGBQUAD* pBufferEnd = pBuffer + (COLORWIDTH*COLORHEIGHT);
+	const RGBQUAD* pBufferEnd = pBuffer + (nWidth*nHeight);
 	while (pBuffer < pBufferEnd)
 	{
 		*p_mat = pBuffer->rgbBlue;
