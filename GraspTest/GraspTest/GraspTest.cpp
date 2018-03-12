@@ -6,6 +6,8 @@
 #include "RobotDriver.h"
 #include "KinectDriver.h"
 #include "utils.h"
+#include "UR5SocketCom.h"
+#include "UR5SocketComCodes.h"
 #include "Common.h"
 #include <process.h>
 #include <Windows.h>
@@ -304,12 +306,17 @@ int main()
 		return res_val;
 	}
 	printf("UR5 init OK\n");
-	pos->Set(0,0,0,0,0,0);
+	pos->Set(0.2,-0.5,0.16,PI,0,PI);
 	//change pos and macro startpos
 	UR5->MoveGrasp(pos,&IsGet);
+	if (IsGet)
+	{
+		printf("Yes, we got it!\n");
+	}
 	UR5->CloseUR();
 	delete pos;
 	delete UR5;
 	return GT_RES_OK;
 }
+
 #endif

@@ -19,10 +19,13 @@
 #define		DEPTHWIDTH						512							//深度图像宽度
 #define		DEPTHHEIGHT						424							//深度图像高度
 
-#define		IPADDR							"192.168.1.4"			//UR5 IP地址
+#define		IPADDR							"192.168.1.4"				//UR5 IP地址
 #define		PORT1							"30000"						//端口port1
 #define		PORT2							"30001"						//端口port2
-#define		STARTPOSE						0,0,0,0,0,0					//关键位置Pose
+
+#define		PI								3.14159265359
+#define		POSE1							0.1,-0.1,0.5,PI,0,PI		//关键路径节点1
+#define		POSE2							0.2,-0.5,0.5,PI,0,PI		//关键路径节点2
 
 #define		COUNT_TIMEOUT					100							//设置NN的超时次数
 #define		TIME_TOWAIT						15000						//设置UR5和kinect的超时时间15000
@@ -47,7 +50,6 @@
 #define		DEPTHGRAPHHEIGHT				20							//局部深度图像高度
 
 
-#define		PI								3.14159265359
 #define		BATCHSIZE						30							//一组数据个数
 #define		COLORSCALE						1							//彩色图像的放大倍数
 
