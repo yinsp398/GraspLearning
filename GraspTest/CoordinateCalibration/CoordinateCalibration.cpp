@@ -232,7 +232,7 @@ int main()
 	std::ofstream fp;
 	fp.open("coordinate.txt", std::ios::out);
 	
-	while (1)
+	for (size_t i = 0; i < 10; i++)
 	{
 		while (std::cin.get());
 		if (!GetCenterPos(pos))
