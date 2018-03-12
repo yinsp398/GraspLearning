@@ -11,7 +11,7 @@
 
 #define _DEBUG_PRINT_
 #define		MAX_RADIUS		1000
-#define		DELTA			20
+#define		DELTA			5
 
 struct Pose {
 	float x;
@@ -60,14 +60,14 @@ bool OpenUR5()
 	}
 	//设置TCP
 	Pose3D	define_TCP;
-	define_TCP.Set(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+	define_TCP.Set(0.0, 0.0, 0.2, 0.0, 0.0, 0.0);
 	if (!m_pUR5->SetTCPTransformation(define_TCP))
 	{
 		printf("define TCP failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
 	}
 	//设置负载重量
-	if (!m_pUR5->SetPayload(0.1, 0.0, 0.0, 0.1))
+	if (!m_pUR5->SetPayload(1.0, 0.0, 0.0, 0.05))
 	{
 		printf("define payload failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
@@ -86,12 +86,8 @@ bool Init()
 		return false;
 	}
 	m_pUR5 = new UR5SocketCom;
-	res = OpenUR5();
-	if (res != GT_RES_OK)
-	{
-		printf("open UR5 failed with error:%02x\n", res);
-		return false;
-	}
+	
+	
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
@@ -154,33 +150,23 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 	}
 	cv::GaussianBlur(Image, Image, cv::Size(7, 7), 2, 2);
 	std::vector<cv::Vec3f> circles;
-	std::vector<cv::Vec3f> circle_tmp;
-	for (size_t i = 0; i < MAX_RADIUS; i += DELTA)
+	HoughCircles(Image, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 200, 100, 130);
+	if (circles.size() == 0)
 	{
-		HoughCircles(Image, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 150, i, i + DELTA);
-		if (circles.size() == 0)
-		{
-			continue;
-		}
-		else if (circles.size() == 1)
-		{
-			circle_tmp.push_back(circles[0]);
-		}
-		else if (circles.size() > 1)
-		{
-			printf("Get more than one circles\n");
-			return false;
-		}
-	}
-	if (circle_tmp.size() != 3)
-	{
-		printf("circle number is not 3,is %d\n", circle_tmp.size());
+		printf("Get not any circle\n");
 		return false;
 	}
-
-	pos.x = (circle_tmp[0][0] + circle_tmp[1][0] + circle_tmp[2][0]) / 3;
-	pos.y = (circle_tmp[0][1] + circle_tmp[1][1] + circle_tmp[2][1]) / 3;
-	return true;
+	else if (circles.size() == 1)
+	{
+		pos.x = circles[0][0];
+		pos.y = circles[0][1];
+		return true;
+	}
+	else if (circles.size() > 1)
+	{
+		printf("Get more than one circles\n");
+		return false;
+	}
 }
 
 bool GetLinePos(cv::Mat Image, Pose &pos)
@@ -227,36 +213,71 @@ Pose CrossPoint(cv::Vec2f line1, cv::Vec2f line2)
 
 int main()
 {
+#if 1
 	Pose pos;
 	Init();
+	printf("init ok\n");
 	std::ofstream fp;
 	fp.open("coordinate.txt", std::ios::out);
-	
+	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
-		while (std::cin.get());
-		if (!GetCenterPos(pos))
+		while (std::cin.get() != '\n');
+
+		//不能第二次获取图像？？？
+		if (m_pKinect->GetKinectImage(m_pGraph)!=GT_RES_OK)
+		{
+			printf("Get image error\n");
+			return 1;
+		}
+		if (!GetCirclePos(*(m_pGraph->ColorImg),pos))
 		{
 			std::cout << "get image center failed" << std::endl;
 			return 1;
 		}
+		pos.z = m_pGraph->DepthInColorImg->at<uchar>(int(pos.y + 0.5), int(pos.x + 0.5));
 		fp << pos.x << " " << pos.y << " " << pos.z<<"\t";
-		while (std::cin.get());
+		std::cout << pos.x << " " << pos.y << " " << pos.z << "\t";
+		while (std::cin.get() != '\n');
+
+		GT_RES res = OpenUR5();
+		if (res != GT_RES_OK)
+		{
+			printf("open UR5 failed with error:%02x\n", res);
+			return false;
+		}
 		if (!GetRobotPos(pos))
 		{
 			std::cout << "get robot pos failed" << std::endl;
 			return 1;
 		}
 		fp << pos.x << " " << pos.y << " " << pos.z << std::endl;
+		std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
+		if (!m_pUR5->DisableRobot())
+		{
+			printf("disable UR5 failed: '%s'\n", m_pUR5->GetLastError().c_str());
+			return 1;
+		}
+		delete(m_pGraph->ColorImg);
+		delete(m_pGraph->DepthImg);
+		delete(m_pGraph->DepthInColorImg);
+		delete m_pGraph;
+		m_pGraph = new Graphics;
+		m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+		m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+		m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 
 	}
 	fp.close();
-
-	/*
-	cv::Mat binary, grayimage;
-	cvtColor(Image, grayimage, CV_BGR2GRAY);
-	Canny(grayimage, binary, 50, 100, 3);
-
+	Uninit();
+#else
+	Init();
+	printf("Init Ok\n");
+	Sleep(2000);
+	m_pKinect->GetKinectImage(m_pGraph);
+	/*cv::Mat binary;
+	Canny(*(m_pGraph->ColorImg), binary, 50, 100, 3);
+	
 	std::vector<cv::Vec2f> lines;
 	HoughLines(binary, lines, 1, CV_PI / 180, 200, 0, 0);
 	std::cout << "line number:" << lines.size() << std::endl;
@@ -273,24 +294,31 @@ int main()
 		pt2.y = cvRound(b*rho + 1000 * (-a));
 
 
-		line(Image, pt1, pt2, cv::Scalar(255, 0, 255), 1, 8);
+		line(*(m_pGraph->ColorImg), pt1, pt2, cv::Scalar(255, 0, 255), 1, 8);
 		std::cout << rho << " " << theta << std::endl;
 	}
 	*/
-	/*
+	cv::Mat grayImage;
+	cv::GaussianBlur(*(m_pGraph->ColorImg), grayImage, cv::Size(7, 7), 2, 2);
+	std::vector<cv::Vec3f> circles;
+	std::vector<cv::Vec3f> circle_tmp;
+	HoughCircles(grayImage, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 200, 100, 130);
+	std::cout << circles.size() << std::endl;
 	for (size_t i = 0; i < circles.size(); i++)
 	{
 		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
 		int radius = cvRound(circles[i][2]);
-		circle(Image, center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-		circle(Image, center, radius, cv::Scalar(155, 50, 255), 3, 8, 0);
+		circle(*(m_pGraph->ColorImg), center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
+		circle(*(m_pGraph->ColorImg), center, radius, cv::Scalar(155, 50, 255), 5, 8, 0);
+		std::cout << "radius" << radius << std::endl;
 	}
 	cv::namedWindow("test", CV_WINDOW_NORMAL);
 	
-	cv::imshow("test", Image);
+	cv::imshow("test", *(m_pGraph->ColorImg));
 	
 	cv::waitKey(0);
-	*/
+	
+#endif
     return 0;
 }
 
