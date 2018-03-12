@@ -26,6 +26,7 @@ struct Pose {
 KinectDriver *m_pKinect;
 UR5SocketCom *m_pUR5;
 Graphics	 *m_pGraph;
+int			count;
 
 bool Init();
 bool GetCenterPos(Pose &pos);
@@ -76,6 +77,7 @@ bool OpenUR5()
 bool Init()
 {
 	GT_RES res;
+	count = 0;
 	m_pKinect = new KinectDriver;
 	res = m_pKinect->OpenKinect();
 	if (res != GT_RES_OK)
@@ -83,7 +85,6 @@ bool Init()
 		printf("open kinect failed with error:%02x\n", res);
 		return false;
 	}
-	m_pUR5 = new UR5SocketCom;
 	
 	
 	m_pGraph = new Graphics;
@@ -149,6 +150,20 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 	cv::GaussianBlur(Image, Image, cv::Size(7, 7), 2, 2);
 	std::vector<cv::Vec3f> circles;
 	HoughCircles(Image, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 200, 100, 130);
+
+#ifdef _DEBUG_PRINT_
+	for (size_t i = 0; i < circles.size(); i++)
+	{
+		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+		int radius = cvRound(circles[i][2]);
+		circle(*(m_pGraph->ColorImg), center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
+		circle(*(m_pGraph->ColorImg), center, radius, cv::Scalar(0, 255, 0), 6, 8, 0);
+		std::cout << "radius" << radius << std::endl;
+		cv::imwrite("image" + std::to_string(count) + ".jpg", *(m_pGraph->ColorImg));
+		count++;
+	}
+
+#endif
 	if (circles.size() == 0)
 	{
 		printf("Get not any circle\n");
@@ -158,6 +173,7 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 	{
 		pos.x = circles[0][0];
 		pos.y = circles[0][1];
+
 		return true;
 	}
 	else if (circles.size() > 1)
@@ -227,20 +243,30 @@ bool TestKinect()
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 	//Get the Kinect image(Color & depth & depth in color frame)
-	Sleep(2000);																	//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready
+					
+		Sleep(2000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
 	for (int i = 0; i < 10; i++)
 	{
-		res = m_pKinect->GetKinectImage(m_pGraph);
-		if (res != GT_RES_OK)
+		res = GT_RES_ERROR;
+		while (res != GT_RES_OK)
 		{
-			printf("Get Kinect image error:%02x\n", res);
+			res = m_pKinect->GetKinectImage(m_pGraph);
+			if (res != GT_RES_OK)
+			{
+				//printf("Get Kinect image error:%02x\n", res);
+			}
+		}
+		std::string prefix("ColorImg");
+		
+#ifdef _DEBUG_PRINT_
+		std::cout << "Saving image:" + prefix + std::to_string(i) + ".jpg" << std::endl;
+#endif
+		bool bl = cv::imwrite(prefix + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
+		if (!bl)
+		{
+			std::cout << "save image failed" << std::endl;
 			return false;
 		}
-		std::string prefix("../DebugImage/ColorImg");
-		cv::imwrite(prefix + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
-#ifdef _DEBUG_PRINT_
-		std::cout << prefix + std::to_string(i) + ".jpg" << std::endl;
-#endif
 	}
 	std::cout << "Kinect can save more than one image" << std::endl;
 
@@ -258,9 +284,9 @@ int main()
 	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
-		while (std::cin.get() != '\n');
+		//while (std::cin.get() != '\n');
+		std::cin.get();
 
-		//不能第二次获取图像？？？
 		if (m_pKinect->GetKinectImage(m_pGraph)!=GT_RES_OK)
 		{
 			printf("Get image error\n");
@@ -274,8 +300,11 @@ int main()
 		pos.z = m_pGraph->DepthInColorImg->at<uchar>(int(pos.y + 0.5), int(pos.x + 0.5));
 		fp << pos.x << " " << pos.y << " " << pos.z<<"\t";
 		std::cout << pos.x << " " << pos.y << " " << pos.z << "\t";
-		while (std::cin.get() != '\n');
 
+		std::cin.get();
+		//while (std::cin.get() != '\n');
+
+		m_pUR5 = new UR5SocketCom;
 		GT_RES res = OpenUR5();
 		if (res != GT_RES_OK)
 		{
@@ -294,6 +323,7 @@ int main()
 			printf("disable UR5 failed: '%s'\n", m_pUR5->GetLastError().c_str());
 			return 1;
 		}
+		delete m_pUR5;
 
 	}
 	fp.close();
