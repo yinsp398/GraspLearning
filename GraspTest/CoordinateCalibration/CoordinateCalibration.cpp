@@ -10,8 +10,6 @@
 #include <fstream>
 
 #define _DEBUG_PRINT_
-#define		MAX_RADIUS		1000
-#define		DELTA			5
 
 struct Pose {
 	float x;
@@ -211,6 +209,44 @@ Pose CrossPoint(cv::Vec2f line1, cv::Vec2f line2)
 	return pos;
 }
 
+bool TestKinect()
+{
+	GT_RES res;
+
+	//Initialize the Kinect driver
+	m_pKinect = new KinectDriver;
+	res = m_pKinect->OpenKinect();
+	if (res != GT_RES_OK)
+	{
+		printf("open kinect failed with error:%02x\n", res);
+		return false;
+	}
+	//Initialize the struct graph to store image
+	m_pGraph = new Graphics;
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	//Get the Kinect image(Color & depth & depth in color frame)
+	Sleep(2000);																	//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready
+	for (int i = 0; i < 10; i++)
+	{
+		res = m_pKinect->GetKinectImage(m_pGraph);
+		if (res != GT_RES_OK)
+		{
+			printf("Get Kinect image error:%02x\n", res);
+			return false;
+		}
+		std::string prefix("../DebugImage/ColorImg");
+		cv::imwrite(prefix + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
+#ifdef _DEBUG_PRINT_
+		std::cout << prefix + std::to_string(i) + ".jpg" << std::endl;
+#endif
+	}
+	std::cout << "Kinect can save more than one image" << std::endl;
+
+	return true;
+}
+
 int main()
 {
 #if 1
@@ -258,14 +294,6 @@ int main()
 			printf("disable UR5 failed: '%s'\n", m_pUR5->GetLastError().c_str());
 			return 1;
 		}
-		delete(m_pGraph->ColorImg);
-		delete(m_pGraph->DepthImg);
-		delete(m_pGraph->DepthInColorImg);
-		delete m_pGraph;
-		m_pGraph = new Graphics;
-		m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-		m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-		m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
 
 	}
 	fp.close();
