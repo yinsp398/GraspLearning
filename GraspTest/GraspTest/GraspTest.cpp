@@ -37,9 +37,9 @@ GT_RES	InitGT(std::string Caffe_Path)
 	HeventNN = CreateEvent(NULL, FALSE, FALSE, NULL);
 	//初始化并启动Kinect
 	Graph = new Graphics;
-	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	Kinect = new KinectDriver;
 	res_val = Kinect->OpenKinect();
 	if (res_val != GT_RES_OK)

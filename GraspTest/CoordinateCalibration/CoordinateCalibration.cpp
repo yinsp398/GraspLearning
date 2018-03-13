@@ -88,9 +88,9 @@ bool Init()
 	
 	
 	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	return true;
 }
 
@@ -127,7 +127,7 @@ bool GetCenterPos(Pose &pos)
 	}
 	posLine.GetAverage(posCircle);
 	pos = posLine;
-	pos.z = m_pGraph->DepthInColorImg->at<uchar>(pos.x, pos.y);
+	pos.z = m_pGraph->DepthInColorImg->at<UINT16>(pos.x, pos.y);
 	return true;
 }
 
@@ -239,9 +239,9 @@ bool TestKinect()
 	}
 	//Initialize the struct graph to store image
 	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	//Get the Kinect image(Color & depth & depth in color frame)
 					
 		Sleep(2000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
@@ -297,7 +297,7 @@ int main()
 			std::cout << "get image center failed" << std::endl;
 			return 1;
 		}
-		pos.z = m_pGraph->DepthInColorImg->at<uchar>(int(pos.y + 0.5), int(pos.x + 0.5));
+		pos.z = m_pGraph->DepthInColorImg->at<UINT16>(int(pos.y + 0.5), int(pos.x + 0.5));
 		fp << pos.x << " " << pos.y << " " << pos.z<<"\t";
 		std::cout << pos.x << " " << pos.y << " " << pos.z << "\t";
 

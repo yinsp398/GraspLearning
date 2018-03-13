@@ -197,7 +197,7 @@ GT_RES	NN::GetPose(Pose3D *pos)
 		out << m_ppos->second<<std::endl;
 		out.close();
 
-		float depth = m_pGraph->DepthInColorImg->at<uchar>(m_ppos->first.y, m_ppos->first.x);
+		float depth = m_pGraph->DepthInColorImg->at<UINT16>(m_ppos->first.y, m_ppos->first.x);
 		res = m_pCoordinateMap->ColorDepth2Robot(m_ppos->first,depth,*pos);
 		m_pposes->clear();
 		ImageCnt++;

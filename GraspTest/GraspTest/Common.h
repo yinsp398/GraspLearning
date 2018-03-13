@@ -71,7 +71,8 @@
 #define		COLOR2ROBOT34					1	
 #define		ANGLEBIAS						0							//抓取角度从图像到机器人坐标系的偏置
 
-#define		IMAGEFORMAT						CV_8UC1						//图像在cv mat中的存储格式，0~255，一个通道的灰度图
+#define		COLORFORMAT						CV_8UC1						//图像在cv mat中的存储格式，8位，一个通道的灰度图
+#define		DEPTHFORMAT						CV_16UC1					//深度图像在cv::mat中的存储格式，16位，一个通道的灰度图
 
 struct GraspPose
 {

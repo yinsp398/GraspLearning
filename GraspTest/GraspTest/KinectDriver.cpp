@@ -206,14 +206,16 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 				}
 			}
 			hr = DepthConvertMat(pBuffer2, COLORWIDTH, COLORHEIGHT, DepthInColorMat);
+			
 		}
 		if (hr == GT_RES_OK)
 		{
+			delete []pBuffer2;
 			SafeRelease(pDepthFrame);
 			return GT_RES_OK;
 		}
+		delete[]pBuffer2;
 	}
-
 	SafeRelease(pDepthFrame);
 	return GT_RES_ERROR;
 }
@@ -237,16 +239,13 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 
 GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg)
 {
-	uchar * p_mat = pImg->data;
-	const UINT16* pBufferEnd = pBuffer + (nWidth*nHeight);
-	while (pBuffer < pBufferEnd)
+	for (size_t i = 0; i < nHeight; i++)
 	{
-		USHORT depth = *pBuffer;
-		BYTE intensity = static_cast<BYTE>(depth % 256);					
-		//map depth to 0~255,but need to notice that when the object is on the distance of 256mm*K,it will introduce some error.
-		*p_mat = intensity;
-		p_mat++;
-		++pBuffer;
+		for (size_t j = 0; j < nWidth; j++)
+		{
+			//test use the whole depth data, not only low data.
+			pImg->at<UINT16>(i, j) = pBuffer[i*nWidth + j];
+		}
 	}
 	return GT_RES_OK;
 }
