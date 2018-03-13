@@ -27,9 +27,6 @@
     <ClInclude Include="RobotDriver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CoordinateMap.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="NN.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -51,9 +48,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Classification.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="CoordinateMap.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="RobotDriver.cpp">

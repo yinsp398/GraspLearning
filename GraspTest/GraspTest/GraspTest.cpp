@@ -31,6 +31,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 {
 	GT_RES	res_val;
 	pos = new Pose3D;
+	ICoordinateMapper *KinectCoordinate;
 	//分配event
 	HeventUR5 = CreateEvent(NULL, FALSE, FALSE, NULL);
 	HeventKinect = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -39,14 +40,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	Graph = new Graphics;
 	Graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	Graph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	Kinect = new KinectDriver;
-	res_val = Kinect->OpenKinect();
-	if (res_val != GT_RES_OK)
-	{
-		printf("Kinect Init failed with error:%02x\n",res_val);
-		return res_val;
-	}
 	//Load and save image from Kinect
 	res_val = Kinect->GetKinectImage(Graph);
 	if (res_val != GT_RES_OK)
@@ -63,9 +57,8 @@ GT_RES	InitGT(std::string Caffe_Path)
 		printf("UR5 Init failed with error:%02x\n", res_val);
 		return res_val;
 	}
-	printf("UR5 init OK\n");
 	//初始化神经网络model
-	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE);
+	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE,Kinect);
 	if (NNet != NULL)
 	{
 		printf("Nueral Network Init failed with error:%02x.\n", res_val);
@@ -85,12 +78,8 @@ GT_RES	UinitGT()
 	//uninitialize Kinect sensor
 	if (Kinect)
 	{
-		res = Kinect->CloseKinect();
-		if (res != GT_RES_OK)
-		{
-			printf("Kinect Uninit failed with error:%02x\n", res);
-			return res;
-		}
+		delete Kinect;
+		Kinect = NULL;
 	}
 	else
 	{
@@ -115,13 +104,10 @@ GT_RES	UinitGT()
 	//uninitialize NN
 	delete Graph->DepthImg;
 	delete Graph->ColorImg;
-	delete Graph->DepthInColorImg;
-	delete Kinect;
 	delete UR5;
 	delete Graph;
 	delete pos;
 	delete NNet;
-	Kinect = NULL;
 	Graph = NULL;
 	UR5 = NULL;
 	pos = NULL;
@@ -303,9 +289,7 @@ int main()
 	Graph = new Graphics;
 	Graph->Rgba = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
 	Graph->depth = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
-	Graph->depth2 = new UINT16[COLORWIDTH*COLORHEIGHT];
 	Kinect = new KinectDriver;
-	res_val = Kinect->OpenKinect();
 	if (res_val != GT_RES_OK)
 	{
 		printf("Kinect Init failed with error:%02x\n", res_val);

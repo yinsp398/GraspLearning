@@ -4,6 +4,7 @@
 #include <opencv2\opencv.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
 #include <KinectDriver.h>
+#include <Kinect.h>
 #include <UR5SocketCom.h>
 #include <UR5SocketComCodes.h>
 #include <utils.h>
@@ -79,7 +80,6 @@ bool Init()
 	GT_RES res;
 	count = 8;
 	m_pKinect = new KinectDriver;
-	res = m_pKinect->OpenKinect();
 	if (res != GT_RES_OK)
 	{
 		printf("open kinect failed with error:%02x\n", res);
@@ -90,17 +90,14 @@ bool Init()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	return true;
 }
 
 bool Uninit()
 {
-	m_pKinect->CloseKinect();
 	m_pUR5->DisableRobot();
 	delete m_pGraph->ColorImg;
 	delete m_pGraph->DepthImg;
-	delete m_pGraph->DepthInColorImg;
 	delete m_pGraph;
 	delete m_pKinect;
 	delete m_pUR5;
@@ -127,7 +124,6 @@ bool GetCenterPos(Pose &pos)
 	}
 	posLine.GetAverage(posCircle);
 	pos = posLine;
-	pos.z = m_pGraph->DepthInColorImg->at<UINT16>(pos.x, pos.y);
 	return true;
 }
 
@@ -240,7 +236,6 @@ bool TestKinect()
 
 	//Initialize the Kinect driver
 	m_pKinect = new KinectDriver;
-	res = m_pKinect->OpenKinect();
 	if (res != GT_RES_OK)
 	{
 		printf("open kinect failed with error:%02x\n", res);
@@ -250,10 +245,9 @@ bool TestKinect()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 	//Get the Kinect image(Color & depth & depth in color frame)
 					
-		Sleep(2000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
+	Sleep(2000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
 	for (int i = 0; i < 10; i++)
 	{
 		res = GT_RES_ERROR;
@@ -311,6 +305,7 @@ int main()
 	cv::imwrite("depthincolorimg.jpg", *(m_pGraph->DepthInColorImg));
 	return 0;
 #elif 1
+	GT_RES res;
 	Pose pos;
 	Init();
 	printf("init ok\n");
@@ -320,8 +315,8 @@ int main()
 	for (size_t i = 0; i < 10; i++)
 	{
 		std::cin.get();
-
-		if (m_pKinect->GetKinectImage(m_pGraph)!=GT_RES_OK)
+		res = m_pKinect->GetKinectImage(m_pGraph);
+		if (res != GT_RES_OK)
 		{
 			std::cout << "Get image error\n" << std::endl;
 			continue;
@@ -331,9 +326,15 @@ int main()
 			std::cout << "get image center failed" << std::endl;
 			continue;
 		}
-		pos.z = m_pGraph->DepthInColorImg->at<UINT16>(size_t(pos.y + 0.5), size_t(pos.x + 0.5));
-		fp << pos.x << " " << pos.y << " " << pos.z<<"\t";
-		std::cout << pos.x << " " << pos.y << " " << pos.z << "\t";
+		ColorSpacePoint Colorpos;
+		CameraSpacePoint Camerapos;
+		Colorpos.X = pos.x;
+		Colorpos.Y = pos.y;
+		Pose3D	posUR;
+		res = m_pKinect->Colorpos2Camerapos(Colorpos, Camerapos);
+
+		fp << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z <<"\t";
+		std::cout << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z << "\t";
 
 		std::cin.get();
 

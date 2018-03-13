@@ -1,13 +1,19 @@
 
 #include "NN.h"
 #include "Classification.h"
-#include "CoordinateMap.h"
-#include <Kinect.h>
+#include "KinectDriver.h"
+
 
 NN::NN(	const std::string & model_file,
 		const std::string & trained_file,
-		const std::string & mean_file)
+		const std::string & mean_file,
+		KinectDriver * Kinect)
 {
+	if (Kinect == NULL)
+	{
+		std::cout << "have no Kinect Sensor" << std::endl;
+	}
+	m_pKinect = Kinect;
 	//m_pClassifier = new Classifier(model_file, trained_file, mean_file );
 	m_ppos = new std::pair<GraspPose, float>;
 	m_pposes = new std::vector<std::pair<GraspPose, float> >;
@@ -18,19 +24,18 @@ NN::NN(	const std::string & model_file,
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 
 }
 
 NN::~NN()
 {
+	delete m_pCoordinateMap;
 	delete m_pClassifier;
 	delete m_ppos;
 	delete m_pposes;
 	delete m_pUpdateTime;
 	delete m_pGraph->DepthImg;
 	delete m_pGraph->ColorImg;
-	delete m_pGraph->DepthInColorImg;
 	delete m_pGraph;
 
 }
@@ -53,7 +58,6 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 	// deeply copy from graph to m_pGraph
 	memcpy(m_pGraph->ColorImg, graph->ColorImg, sizeof(graph->ColorImg));
 	memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
-	memcpy(m_pGraph->DepthInColorImg, graph->DepthInColorImg, sizeof(graph->DepthInColorImg));
 
 	return GT_RES_OK;
 }
@@ -197,8 +201,7 @@ GT_RES	NN::GetPose(Pose3D *pos)
 		out << m_ppos->second<<std::endl;
 		out.close();
 
-		float depth = m_pGraph->DepthInColorImg->at<UINT16>(m_ppos->first.y, m_ppos->first.x);
-		res = m_pCoordinateMap->ColorDepth2Robot(m_ppos->first,depth,*pos);
+		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
 		m_pposes->clear();
 		ImageCnt++;
 		return GT_RES_OK;

@@ -85,7 +85,6 @@ struct Graphics
 {
 	cv::Mat *ColorImg;
 	cv::Mat *DepthImg;
-	cv::Mat *DepthInColorImg;
 };
 
 

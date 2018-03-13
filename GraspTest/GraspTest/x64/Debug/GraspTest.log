@@ -1,10 +1,1 @@
-﻿  KinectDriver.cpp
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\mat.hpp(1965): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\persistence.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\desktop\grasplearning\grasptest\grasptest\kinectdriver.cpp(200): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
-c:\users\yinsp\desktop\grasplearning\grasptest\grasptest\kinectdriver.cpp(201): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
-c:\users\yinsp\desktop\grasplearning\grasptest\grasptest\kinectdriver.cpp(247): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-  GraspTest.vcxproj -> C:\Users\yinsp\Desktop\GraspLearning\GraspTest\x64\Debug\GraspTest.exe
-  GraspTest.vcxproj -> C:\Users\yinsp\Desktop\GraspLearning\GraspTest\x64\Debug\GraspTest.pdb (Full PDB)
+﻿

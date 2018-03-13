@@ -4,16 +4,21 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "utils.h"
+#include <Kinect.h>
 
 
 
-CoordinateMap::CoordinateMap()
+CoordinateMap::CoordinateMap(ICoordinateMapper *KinectCoordinate)
 {
-
+	m_pKinectCoordinate = KinectCoordinate;
+	m_pDepthBuffer = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
 }
+
 CoordinateMap::~CoordinateMap()
 {
-
+	m_pKinectCoordinate = NULL;
+	delete[]m_pDepthBuffer;
+	m_pDepthBuffer = NULL;
 }
 
 GT_RES	CoordinateMap::Robot2Camera(Pose3D *posCamera, Pose3D *posUR)
@@ -31,7 +36,7 @@ GT_RES	CoordinateMap::Color2Depth(const unsigned int Xc, const unsigned int Yc, 
 	return GT_RES_OK;
 }
 
-GT_RES	CoordinateMap::ColorDepth2Robot(const GraspPose posColor, const float Depth, Pose3D &posUR)
+GT_RES	CoordinateMap::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 {
 	cv::Mat MatColor(cv::Size(1, 4), CV_32F);
 	cv::Mat MatUR(cv::Size(1, 4), CV_32F);

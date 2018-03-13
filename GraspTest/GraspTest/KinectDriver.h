@@ -1,18 +1,29 @@
 #pragma once
 #include "Common.h"
-#include <Kinect.h>
 #include <opencv2/core/core.hpp>
-struct Graphics;
 
+struct Graphics;
+class  Pose3D;
+struct IKinectSensor;
+struct IColorFrameReader;
+struct IDepthFrameReader;
+struct ICoordinateMapper;
+typedef struct _CameraSpacePoint CameraSpacePoint;
+typedef struct _DepthSpacePoint DepthSpacePoint;
+typedef struct _ColorSpacePoint ColorSpacePoint;
+typedef struct tagRGBQUAD RGBQUAD;
+typedef unsigned short UINT16;
 
 class KinectDriver
 {
 private:
-	IKinectSensor *			m_pKinectSensor = NULL;
-	IColorFrameReader *		m_pColorFrameReader = NULL;
-	IDepthFrameReader *		m_pDepthFrameReader = NULL;
-	ICoordinateMapper *		m_pCoordinateMapper = NULL;
-	DepthSpacePoint	*		m_pDepthInColorFrame = NULL;
+	IKinectSensor		*		m_pKinectSensor = NULL;								//Kinect传感器指针
+	IColorFrameReader	*		m_pColorFrameReader = NULL;							//用于获取彩色帧数据
+	IDepthFrameReader	*		m_pDepthFrameReader = NULL;							//用于获取深度图像帧
+	ICoordinateMapper	*		m_pCoordinateMapper = NULL;							//用于进行坐标系转换
+	UINT16				*		m_pDepthImage = NULL;								//存储当前深度图像（用于进行坐标系转换）
+	CameraSpacePoint	*		m_pColorInCameraSpace = NULL;						//彩色图像位置到相机空间的转换矩阵
+	DepthSpacePoint		*		m_pColorInDepthSpace = NULL;						//彩色图像位置到深度空间的转换矩阵
 public:
 
 	KinectDriver();
@@ -27,27 +38,28 @@ public:
 	//关闭KinectSensor
 	GT_RES	CloseKinect();
 
-private:
-	//初始化KinectSensor
-	GT_RES	InitKinect();
+	//根据彩色空间坐标，给出相机空间坐标
+	GT_RES	Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSpacePoint &Camerapos);
 
-	//释放Kinect
-	GT_RES	UInitKinect();
+	//根据彩色空间坐标，给出深度空间坐标
+	GT_RES	Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpacePoint &Depthpos);
+
+	//从彩色图像中的位置得到机器人实际的抓取位置和姿态(x, y, theta)->(x, y, z, Rx, Ry, Rz)
+	GT_RES	ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR);
+
+private:
 
 	//获取彩色图像
-	GT_RES	GetColorImage(cv::Mat *ColorMat);
+	GT_RES	GetColorImage(RGBQUAD *ColorImg);
 
 	//获取深度图像
-	GT_RES	GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat);
+	GT_RES	GetDepthImage(UINT16 *DepthImg);
 
 	//转换深度图到Mat格式
 	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
 
 	//转换彩色图到Mat格式
 	GT_RES	RGBConvertMat(const RGBQUAD* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
-
-	//转换彩色图到灰度图
-	GT_RES	RGBAConvertG(BYTE *pGray, const RGBQUAD *pBuffer, const unsigned int Width, const unsigned int Height);
 
 	// Safe release for interfaces
 	template<class Interface>

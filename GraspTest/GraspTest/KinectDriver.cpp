@@ -1,66 +1,56 @@
 
 #include "KinectDriver.h"
+#include <utils.h>
 #include <opencv2\imgproc.hpp>
+#include <Kinect.h>
 #include <stdio.h>
 
 
 
 KinectDriver::KinectDriver()
 {
-	m_pDepthInColorFrame = new DepthSpacePoint[COLORWIDTH*COLORHEIGHT];
+	OpenKinect();
 }
 
 KinectDriver::~KinectDriver()
 {
-	delete[] m_pDepthInColorFrame;
+	if (m_pDepthImage)
+	{
+		delete[]m_pDepthImage;
+		m_pDepthImage = NULL;
+	}
+	CloseKinect();
 }
 
-//关闭KinectSensor
 GT_RES	KinectDriver::CloseKinect()
 {
 	HRESULT hr;
 	SafeRelease(m_pDepthFrameReader);
 	SafeRelease(m_pColorFrameReader);
 	hr = m_pKinectSensor->Close();
+	SafeRelease(m_pKinectSensor);
 	if (!SUCCEEDED(hr))
 	{
 		return GT_RES_ERROR;
 	}
-	if (UInitKinect() != GT_RES_OK)
-	{
-		return GT_RES_ERROR;
-	}
 	return GT_RES_OK;
 }
 
-//释放Kinect
-GT_RES	KinectDriver::UInitKinect()
-{
-	SafeRelease(m_pKinectSensor);
-	return GT_RES_OK;
-}
-
-//启动KinectSensor
 GT_RES	KinectDriver::OpenKinect()
 {
-	GT_RES res = InitKinect();
-	if (res != GT_RES_OK)
-		return res;
+	HRESULT hr;
 	IColorFrameSource *pColorFrameSource = NULL;
 	IDepthFrameSource *pDepthFrameSource = NULL;
-	HRESULT hr;
 	BOOLEAN	Available = false;
+
+	hr = GetDefaultKinectSensor(&m_pKinectSensor);
+	if (FAILED(hr))
+	{
+		printf("No ready Kinect.\n");
+		return GT_RES_NODEVICE;
+	}
 	if (m_pKinectSensor)
 	{
-		/*
-		hr = m_pKinectSensor->get_IsAvailable(&Available);
-		if (!Available)
-		{
-			printf("KinectSensor is not availabel!\n");
-			return GT_RES_NODEVICE;
-		}
-		Available = false;
-		*/
 		hr = m_pKinectSensor->Open();
 		if (SUCCEEDED(hr))
 		{
@@ -101,22 +91,7 @@ GT_RES	KinectDriver::OpenKinect()
 	return GT_RES_OK;
 }
 
-//初始化Kinect
-GT_RES	KinectDriver::InitKinect()
-{
-	//Initialize sensor
-	HRESULT hr;
-	hr = GetDefaultKinectSensor(&m_pKinectSensor);
-	if (FAILED(hr))
-	{
-		printf("No ready Kinect.\n");
-		return GT_RES_NODEVICE;
-	}
-
-	return GT_RES_OK;
-}
-
-GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
+GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
 {
 	HRESULT hr = NULL;
 	IColorFrame *pColorFrame = NULL;
@@ -130,7 +105,7 @@ GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 		IFrameDescription * pFrameDescription = NULL;
 		ColorImageFormat imageFormat = ColorImageFormat_None;
 		UINT nBufferSize = 0;
-		RGBQUAD *pBuffer = new RGBQUAD[COLORHEIGHT*COLORWIDTH];
+		RGBQUAD *pBuffer = ColorImg;
 		
 		if (SUCCEEDED(hr))
 		{
@@ -138,19 +113,8 @@ GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 		}
 		if (SUCCEEDED(hr))
 		{
-			if (imageFormat == ColorImageFormat_Bgra)
-			{
-				hr = pColorFrame->AccessRawUnderlyingBuffer(&nBufferSize, reinterpret_cast<BYTE**> (&pBuffer));
-			}
-			else
-			{
-				nBufferSize = COLORWIDTH * COLORHEIGHT * sizeof(RGBQUAD);
-				hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
-			}
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = RGBConvertMat(pBuffer, COLORWIDTH, COLORHEIGHT, ColorMat);
+			nBufferSize = COLORWIDTH * COLORHEIGHT * sizeof(RGBQUAD);
+			hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
 		}
 		if (hr == GT_RES_OK)
 		{
@@ -162,7 +126,7 @@ GT_RES	KinectDriver::GetColorImage(cv::Mat *ColorMat)
 	return GT_RES_ERROR;
 }
 
-GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
+GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg)
 {
 	HRESULT hr = NULL;
 	IDepthFrame *pDepthFrame = NULL;
@@ -175,65 +139,78 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 	{
 		ColorImageFormat imageFormat = ColorImageFormat_None;
 		UINT nBufferSize = 0;
-		UINT16 *pBuffer = NULL;
-		UINT16 *pBuffer2 = new UINT16[COLORHEIGHT*COLORWIDTH];
+		UINT16 *pBuffer = DepthImg;
 
 		if (SUCCEEDED(hr))
 		{
 			nBufferSize = DEPTHWIDTH * DEPTHHEIGHT * sizeof(UINT16);
-			hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = DepthConvertMat(pBuffer, DEPTHWIDTH, DEPTHHEIGHT, DepthMat);
+			hr = pDepthFrame->CopyFrameDataToArray(nBufferSize, pBuffer);
 		}
 		if (hr == GT_RES_OK)
 		{
-			hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(DEPTHHEIGHT*DEPTHWIDTH, pBuffer, COLORWIDTH*COLORHEIGHT, m_pDepthInColorFrame);
-		}
-		if (SUCCEEDED(hr))
-		{
-			for (size_t i = 0; i < COLORHEIGHT; i++)
-			{
-				for (size_t j = 0; j < COLORWIDTH; j++)
-				{
-					int x_tmp = m_pDepthInColorFrame[i*COLORWIDTH + j].X;					//XandY is float ,so maybe we can use interpolation to make it more percise
-					int y_tmp = m_pDepthInColorFrame[i*COLORHEIGHT + j].Y;
-					if (x_tmp < 0 || x_tmp >= DEPTHWIDTH || y_tmp < 0 || y_tmp >= DEPTHHEIGHT)
-						pBuffer2[i*COLORWIDTH + j] = 0;
-					else
-						pBuffer2[i*COLORWIDTH + j] = pBuffer[(y_tmp * DEPTHWIDTH + x_tmp)];
-				}
-			}
-			hr = DepthConvertMat(pBuffer2, COLORWIDTH, COLORHEIGHT, DepthInColorMat);
-			
-		}
-		if (hr == GT_RES_OK)
-		{
-			delete []pBuffer2;
 			SafeRelease(pDepthFrame);
 			return GT_RES_OK;
 		}
-		delete[]pBuffer2;
 	}
 	SafeRelease(pDepthFrame);
 	return GT_RES_ERROR;
 }
 
-//从Kinect获取图像，RGBD四维数据
 GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 {
 	GT_RES res;
+	RGBQUAD *ColorImg = new RGBQUAD[COLORWIDTH*COLORHEIGHT];
+	if (m_pDepthImage)
+	{
+		delete[]m_pDepthImage;
+		m_pDepthImage = NULL;
+	}
+	if (m_pColorInCameraSpace)
+	{
+		delete[]m_pColorInCameraSpace;
+		m_pColorInCameraSpace = NULL;
+	}
+	if (m_pColorInDepthSpace)
+	{
+		delete[]m_pColorInDepthSpace;
+		m_pColorInDepthSpace = NULL;
+	}
+	m_pDepthImage = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
+	UINT16 *DepthImg = m_pDepthImage;
 	cv::Mat ColorMat(COLORHEIGHT, COLORWIDTH, CV_8UC3);
-	res = GetColorImage(&ColorMat);
-	if (res == GT_RES_OK)
+	//Get and deal Color Img
+	res = GetColorImage(ColorImg);
+	if (res != GT_RES_OK)
 	{
-		cvtColor(ColorMat, *(Graph->ColorImg), CV_RGB2GRAY);
+		printf("GetColorImg failed!\n");
+		delete[]ColorImg;
+		return res;
 	}
-	if (res == GT_RES_OK)
+	res = RGBConvertMat(ColorImg, COLORWIDTH, COLORHEIGHT, &ColorMat);
+	if (res != GT_RES_OK)
 	{
-		res = GetDepthImage(Graph->DepthImg, Graph->DepthInColorImg);
+		printf("RGBConvertMat failed!\n");
+		delete[]ColorImg;
+		return res;
 	}
+	cvtColor(ColorMat, *(Graph->ColorImg), CV_RGB2GRAY);
+	//Get and deal DepthImg
+	res = GetDepthImage(DepthImg);
+	if (res != GT_RES_OK)
+	{
+		printf("GetDepthImg failed!\n");
+		delete[]ColorImg;
+		return res;
+	}
+	res = DepthConvertMat(DepthImg, DEPTHWIDTH, DEPTHHEIGHT, Graph->DepthImg);
+	if (res != GT_RES_OK)
+	{
+		printf("DepthConvertMat failed!\n");
+		delete[]ColorImg;
+		return res;
+	}
+
+	delete[]ColorImg;
 	return res;
 }
 
@@ -243,7 +220,6 @@ GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, const unsigned int n
 	{
 		for (size_t j = 0; j < nWidth; j++)
 		{
-			//test use the whole depth data, not only low data.
 			pImg->at<UINT16>(i, j) = pBuffer[i*nWidth + j];
 		}
 	}
@@ -267,12 +243,148 @@ GT_RES	KinectDriver::RGBConvertMat(const RGBQUAD* pBuffer, const unsigned int nW
 	return GT_RES_OK;
 }
 
-//彩色图像转化为灰度图
-GT_RES	KinectDriver::RGBAConvertG(BYTE *pGray, const RGBQUAD *pBuffer, const unsigned int Width, const unsigned int Height)
+GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 {
-	for (unsigned int i = 0; i < Width*Height; i++)
+	GT_RES res;
+	ColorSpacePoint Colorpos;
+	CameraSpacePoint Camerapos;
+	Colorpos.X = posColor.x;
+	Colorpos.Y = posColor.y;
+
+	res = Colorpos2Camerapos(Colorpos, Camerapos);
+	if (res != GT_RES_OK)
 	{
-		pGray[i] = (BYTE)(pBuffer[i].rgbBlue/3.0 + pBuffer[i].rgbGreen/3.0 + pBuffer[i].rgbRed/3.0);
+		return res;
 	}
+	//transform the CameraSpace pos to RobotSpace pos by Matrix T,Mat_Robot = Mat_Trans * Mat_Camera(Mat_Trans is got by calibrated in CoordinateCaliabration project)
+	cv::Mat MatCamera(cv::Size(1, 4), CV_32F);
+	cv::Mat MatUR(cv::Size(1, 4), CV_32F);
+	cv::Mat MatTrans(cv::Size(3, 3), CV_32F);
+	MatCamera.at<float>(0, 0) = Camerapos.X;
+	MatCamera.at<float>(1, 0) = Camerapos.Y;
+	MatCamera.at<float>(2, 0) = Camerapos.Z;
+	MatCamera.at<float>(3, 0) = 1.0;
+	MatTrans.at<float>(0, 0) = COLOR2ROBOT11;
+	MatTrans.at<float>(0, 1) = COLOR2ROBOT12;
+	MatTrans.at<float>(0, 2) = COLOR2ROBOT13;
+	MatTrans.at<float>(0, 3) = COLOR2ROBOT14;
+	MatTrans.at<float>(1, 0) = COLOR2ROBOT21;
+	MatTrans.at<float>(1, 1) = COLOR2ROBOT22;
+	MatTrans.at<float>(1, 2) = COLOR2ROBOT23;
+	MatTrans.at<float>(1, 3) = COLOR2ROBOT24;
+	MatTrans.at<float>(2, 0) = COLOR2ROBOT31;
+	MatTrans.at<float>(2, 1) = COLOR2ROBOT32;
+	MatTrans.at<float>(2, 2) = COLOR2ROBOT33;
+	MatTrans.at<float>(2, 3) = COLOR2ROBOT34;
+	MatUR = MatTrans*MatCamera;																	//Robot=Trans*Camera
+
+	posUR.x = MatUR.at<float>(0, 0);
+	posUR.y = MatUR.at<float>(1, 0);
+	posUR.z = MatUR.at<float>(2, 0);
+	posUR.Rx = PI;																				//Default Robot TCP is towards down;
+	posUR.Ry = 0;
+	posUR.Rz = posColor.theta + ANGLEBIAS;														//Anglebias is calibrated or learn by nerual network.
+	return GT_RES_OK;
+}
+
+GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSpacePoint &Camerapos)
+{
+	GT_RES res;
+	HRESULT hr;
+	//Check the kinect is ready
+	if (!m_pKinectSensor)
+	{
+		printf("Kinect have not initilized.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	BOOLEAN Open = false;
+	m_pKinectSensor->get_IsOpen(&Open);
+	if (!Open)
+	{
+		printf("KinectSensor have not opened.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	if (!m_pCoordinateMapper)
+	{
+		printf("CoordinateMapper have not been ready.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	//Check if DepthImage have been got, if not , get it!(this maxtrix will be delete when get Kinect image)
+	if (!m_pDepthImage)
+	{
+		m_pDepthImage = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
+		res = GetDepthImage(m_pDepthImage);
+		if (res != GT_RES_OK)
+		{
+			printf("GetDepthImage failed!\n");
+			delete[]m_pDepthImage;
+			m_pDepthImage = NULL;
+			return res;
+		}
+	}
+	//Check if Colorframe to Camera Space Matrix have been got, if not , get it!(this maxtrix will be delete when get Kinect image)
+	if (!m_pColorInCameraSpace)
+	{
+		m_pColorInCameraSpace = new CameraSpacePoint[COLORHEIGHT*COLORWIDTH];
+		hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(DEPTHWIDTH*DEPTHHEIGHT, m_pDepthImage, COLORWIDTH*COLORHEIGHT, m_pColorInCameraSpace);
+		if (FAILED(hr))
+		{
+			printf("MapColorFrameToCameraSpace failed!\n");
+			return GT_RES_ERROR;
+		}
+	}
+	//Get CameraSpace pos from Color pos,(Xrgb,Yrgb,Depth)->(Xc,Yc,Zc)
+	Camerapos = m_pColorInCameraSpace[((unsigned int)Colorpos.Y*COLORHEIGHT + (unsigned int)Colorpos.X)];
+	return GT_RES_OK;
+}
+
+GT_RES	KinectDriver::Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpacePoint &Depthpos)
+{
+	GT_RES res;
+	HRESULT hr;
+	//Check the kinect is ready
+	if (!m_pKinectSensor)
+	{
+		printf("Kinect have not initilized.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	BOOLEAN Open = false;
+	m_pKinectSensor->get_IsOpen(&Open);
+	if (!Open)
+	{
+		printf("KinectSensor have not opened.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	if (!m_pCoordinateMapper)
+	{
+		printf("CoordinateMapper have not been ready.\n");
+		return GT_RES_DEVICENOTREADY;
+	}
+	//Check if DepthImage have been got, if not , get it!(this maxtrix will be delete when get Kinect image)
+	if (!m_pDepthImage)
+	{
+		m_pDepthImage = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
+		res = GetDepthImage(m_pDepthImage);
+		if (res != GT_RES_OK)
+		{
+			printf("GetDepthImage failed!\n");
+			delete[]m_pDepthImage;
+			m_pDepthImage = NULL;
+			return res;
+		}
+	}
+	//Check if Colorframe to Depth Space Matrix have been got, if not , get it!(this maxtrix will be delete when get Kinect image)
+	if (!m_pColorInDepthSpace)
+	{
+		m_pColorInDepthSpace = new DepthSpacePoint[DEPTHHEIGHT*DEPTHWIDTH];
+		hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(DEPTHWIDTH*DEPTHHEIGHT, m_pDepthImage, COLORWIDTH*COLORHEIGHT, m_pColorInDepthSpace);
+		if (FAILED(hr))
+		{
+			printf("MapColorFrameToDepthSpace failed!\n");
+			return GT_RES_ERROR;
+		}
+	}
+	//Get DepthSpace pos from Color pos,(Xrgb,Yrgb)->Depth
+	Depthpos = m_pColorInDepthSpace[((unsigned int)Colorpos.Y*COLORHEIGHT + (unsigned int)Colorpos.X)];
 	return GT_RES_OK;
 }

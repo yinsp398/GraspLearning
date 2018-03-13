@@ -159,14 +159,12 @@
   <ItemGroup>
     <ClInclude Include="Classification.h" />
     <ClInclude Include="Common.h" />
-    <ClInclude Include="CoordinateMap.h" />
     <ClInclude Include="KinectDriver.h" />
     <ClInclude Include="NN.h" />
     <ClInclude Include="RobotDriver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Classification.cpp" />
-    <ClCompile Include="CoordinateMap.cpp" />
     <ClCompile Include="GraspTest.cpp" />
     <ClCompile Include="KinectDriver.cpp" />
     <ClCompile Include="NN.cpp" />
