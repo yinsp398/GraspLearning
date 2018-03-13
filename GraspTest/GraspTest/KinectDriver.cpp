@@ -7,14 +7,11 @@
 
 KinectDriver::KinectDriver()
 {
-	InitKinect();
 	m_pDepthInColorFrame = new DepthSpacePoint[COLORWIDTH*COLORHEIGHT];
 }
 
 KinectDriver::~KinectDriver()
 {
-	CloseKinect();
-	UInitKinect();
 	delete[] m_pDepthInColorFrame;
 }
 
@@ -46,6 +43,9 @@ GT_RES	KinectDriver::UInitKinect()
 //Æô¶¯KinectSensor
 GT_RES	KinectDriver::OpenKinect()
 {
+	GT_RES res = InitKinect();
+	if (res != GT_RES_OK)
+		return res;
 	IColorFrameSource *pColorFrameSource = NULL;
 	IDepthFrameSource *pDepthFrameSource = NULL;
 	HRESULT hr;

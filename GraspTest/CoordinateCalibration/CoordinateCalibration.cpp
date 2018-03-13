@@ -77,7 +77,7 @@ bool OpenUR5()
 bool Init()
 {
 	GT_RES res;
-	count = 0;
+	count = 8;
 	m_pKinect = new KinectDriver;
 	res = m_pKinect->OpenKinect();
 	if (res != GT_RES_OK)
@@ -328,7 +328,7 @@ int main()
 		}
 		if (!GetCirclePos(*(m_pGraph->ColorImg),pos))
 		{
-			errfp << "get image center failed" << std::endl;
+			std::cout << "get image center failed" << std::endl;
 			continue;
 		}
 		pos.z = m_pGraph->DepthInColorImg->at<UINT16>(size_t(pos.y + 0.5), size_t(pos.x + 0.5));
