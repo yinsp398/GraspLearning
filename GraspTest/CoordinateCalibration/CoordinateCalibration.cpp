@@ -27,6 +27,7 @@ KinectDriver *m_pKinect;
 UR5SocketCom *m_pUR5;
 Graphics	 *m_pGraph;
 int			count;
+std::ofstream errfp;
 
 bool Init();
 bool GetCenterPos(Pose &pos);
@@ -166,7 +167,7 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 #endif
 	if (circles.size() == 0)
 	{
-		printf("Get not any circle\n");
+		std::cout << "Get not any circle" << std::endl;
 		return false;
 	}
 	else if (circles.size() == 1)
@@ -178,8 +179,17 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 	}
 	else if (circles.size() > 1)
 	{
-		printf("Get more than one circles\n");
-		return false;
+		std::cout << "Get more than one circles:" << circles.size() << std::endl;
+		float CircleCnt = circles.size();
+		float x=0, y=0;
+		for (size_t i; i < CircleCnt; i++)
+		{
+			x += circles[i][0];
+			y += circles[i][1];
+		}
+		pos.x = x / CircleCnt;
+		pos.y = y / CircleCnt;
+		return true;
 	}
 }
 
@@ -273,60 +283,89 @@ bool TestKinect()
 	return true;
 }
 
+bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg)
+{
+	int nWidth = DepthImg->size.p[1];
+	int nHeight = DepthImg->size.p[0];
+	for (size_t i = 0; i < nHeight; i++)
+	{
+		for (size_t j = 0; j < nWidth; j++)
+		{
+			OutImg->at<uchar>(i, j) = (uchar)(DepthImg->at<UINT16>(i, j) % 256);
+		}
+	}
+	return true;
+}
 int main()
 {
-#if 1
+#if 0
+	Init();
+	printf("Init OK\n");
+	Sleep(2000);
+	m_pKinect->GetKinectImage(m_pGraph);
+	cv::Mat DepthImg(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
+	cv::Mat DepthInColorImg(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	//GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
+	//GetBYTEformat(m_pGraph->DepthInColorImg, &DepthInColorImg);
+	cv::imwrite("colorimg.jpg", *(m_pGraph->ColorImg));
+	cv::imwrite("depthimg.jpg", *(m_pGraph->DepthImg));
+	cv::imwrite("depthincolorimg.jpg", *(m_pGraph->DepthInColorImg));
+	return 0;
+#elif 1
 	Pose pos;
 	Init();
 	printf("init ok\n");
 	std::ofstream fp;
 	fp.open("coordinate.txt", std::ios::out);
+	errfp.open("ErrLog.txt", std::ios::out);
 	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
-		//while (std::cin.get() != '\n');
 		std::cin.get();
 
 		if (m_pKinect->GetKinectImage(m_pGraph)!=GT_RES_OK)
 		{
-			printf("Get image error\n");
-			return 1;
+			std::cout << "Get image error\n" << std::endl;
+			continue;
 		}
 		if (!GetCirclePos(*(m_pGraph->ColorImg),pos))
 		{
-			std::cout << "get image center failed" << std::endl;
-			return 1;
+			errfp << "get image center failed" << std::endl;
+			continue;
 		}
-		pos.z = m_pGraph->DepthInColorImg->at<UINT16>(int(pos.y + 0.5), int(pos.x + 0.5));
+		pos.z = m_pGraph->DepthInColorImg->at<UINT16>(size_t(pos.y + 0.5), size_t(pos.x + 0.5));
 		fp << pos.x << " " << pos.y << " " << pos.z<<"\t";
 		std::cout << pos.x << " " << pos.y << " " << pos.z << "\t";
 
 		std::cin.get();
-		//while (std::cin.get() != '\n');
 
 		m_pUR5 = new UR5SocketCom;
 		GT_RES res = OpenUR5();
 		if (res != GT_RES_OK)
 		{
-			printf("open UR5 failed with error:%02x\n", res);
-			return false;
+			std::cout << "open UR5 failed with error:" << res << std::endl;
+			delete m_pUR5;
+			continue;
 		}
 		if (!GetRobotPos(pos))
 		{
-			std::cout << "get robot pos failed" << std::endl;
-			return 1;
+			errfp << "get robot pos failed" << std::endl;
+			delete m_pUR5;
+			continue;
 		}
 		fp << pos.x << " " << pos.y << " " << pos.z << std::endl;
 		std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
 		if (!m_pUR5->DisableRobot())
 		{
-			printf("disable UR5 failed: '%s'\n", m_pUR5->GetLastError().c_str());
-			return 1;
+			std::cout << "disable UR5 failed: '%s'" << m_pUR5->GetLastError().c_str() << std::endl;
+			delete m_pUR5;
+			continue;
 		}
 		delete m_pUR5;
 
 	}
 	fp.close();
+	errfp.close();
 	Uninit();
 #else
 	Init();
