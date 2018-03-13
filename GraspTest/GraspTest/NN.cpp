@@ -16,9 +16,9 @@ NN::NN(	const std::string & model_file,
 	*m_pUpdateTime = time(NULL);
 	ImageCnt = 0;
 	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, IMAGEFORMAT);
-	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
-	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, IMAGEFORMAT);
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->DepthInColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, DEPTHFORMAT);
 
 }
 
@@ -51,9 +51,9 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 		return GT_RES_ERROR;
 	}
 	// deeply copy from graph to m_pGraph
-	m_pGraph->ColorImg = &(graph->ColorImg->clone());
-	m_pGraph->DepthImg = &(graph->DepthImg->clone());
-	m_pGraph->DepthInColorImg = &(graph->DepthInColorImg->clone());
+	memcpy(m_pGraph->ColorImg, graph->ColorImg, sizeof(graph->ColorImg));
+	memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
+	memcpy(m_pGraph->DepthInColorImg, graph->DepthInColorImg, sizeof(graph->DepthInColorImg));
 
 	return GT_RES_OK;
 }
