@@ -60,14 +60,14 @@ bool OpenUR5()
 	}
 	//设置TCP
 	Pose3D	define_TCP;
-	define_TCP.Set(TCPPOSE);
+	define_TCP.Set(0.0, 0.0, 0.2, 0.0, 0.0, 0.0);
 	if (!m_pUR5->SetTCPTransformation(define_TCP))
 	{
 		printf("define TCP failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
 	}
 	//设置负载重量
-	if (!m_pUR5->SetPayload(PAYLOAD))
+	if (!m_pUR5->SetPayload(1.0, 0.0, 0.0, 0.05))
 	{
 		printf("define payload failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
@@ -298,11 +298,11 @@ int main()
 	m_pKinect->GetKinectImage(m_pGraph);
 	cv::Mat DepthImg(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	cv::Mat DepthInColorImg(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
-	GetBYTEformat(m_pGraph->DepthInColorImg, &DepthInColorImg);
+	//GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
+	//GetBYTEformat(m_pGraph->DepthInColorImg, &DepthInColorImg);
 	cv::imwrite("colorimg.jpg", *(m_pGraph->ColorImg));
-	cv::imwrite("depthimg.jpg", DepthImg);
-	cv::imwrite("depthincolorimg.jpg", DepthInColorImg);
+	cv::imwrite("depthimg.jpg", *(m_pGraph->DepthImg));
+	cv::imwrite("depthincolorimg.jpg", *(m_pGraph->DepthInColorImg));
 	return 0;
 #elif 1
 	GT_RES res;
