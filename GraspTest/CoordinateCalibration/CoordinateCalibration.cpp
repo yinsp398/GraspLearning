@@ -27,7 +27,6 @@ KinectDriver *m_pKinect;
 UR5SocketCom *m_pUR5;
 Graphics	 *m_pGraph;
 int			count;
-std::ofstream errfp;
 
 bool Init();
 bool GetCenterPos(Pose &pos);
@@ -317,7 +316,6 @@ int main()
 	printf("init ok\n");
 	std::ofstream fp;
 	fp.open("coordinate.txt", std::ios::out);
-	errfp.open("ErrLog.txt", std::ios::out);
 	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
@@ -349,7 +347,7 @@ int main()
 		}
 		if (!GetRobotPos(pos))
 		{
-			errfp << "get robot pos failed" << std::endl;
+			std::cout << "get robot pos failed" << std::endl;
 			delete m_pUR5;
 			continue;
 		}
@@ -365,7 +363,6 @@ int main()
 
 	}
 	fp.close();
-	errfp.close();
 	Uninit();
 #else
 	Init();
