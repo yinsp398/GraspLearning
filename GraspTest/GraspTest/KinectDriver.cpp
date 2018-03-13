@@ -193,16 +193,16 @@ GT_RES	KinectDriver::GetDepthImage(cv::Mat *DepthMat, cv::Mat *DepthInColorMat)
 		}
 		if (SUCCEEDED(hr))
 		{
-			for (int i = 0; i < COLORWIDTH; i++)
+			for (size_t i = 0; i < COLORHEIGHT; i++)
 			{
-				for (int j = 0; j < COLORHEIGHT; j++)
+				for (size_t j = 0; j < COLORWIDTH; j++)
 				{
-					int x_tmp = m_pDepthInColorFrame[i*COLORHEIGHT + j].X;					//XandY is float ,so maybe we can use interpolation to make it more percise
+					int x_tmp = m_pDepthInColorFrame[i*COLORWIDTH + j].X;					//XandY is float ,so maybe we can use interpolation to make it more percise
 					int y_tmp = m_pDepthInColorFrame[i*COLORHEIGHT + j].Y;
-					if (x_tmp < 0 || x_tmp >= COLORWIDTH || y_tmp < 0 || y_tmp >= COLORHEIGHT)
-						pBuffer2[i*COLORHEIGHT + j] = 0;
+					if (x_tmp < 0 || x_tmp >= DEPTHWIDTH || y_tmp < 0 || y_tmp >= DEPTHHEIGHT)
+						pBuffer2[i*COLORWIDTH + j] = 0;
 					else
-						pBuffer2[i*COLORHEIGHT + j] = pBuffer[(x_tmp * DEPTHHEIGHT + y_tmp)];
+						pBuffer2[i*COLORWIDTH + j] = pBuffer[(y_tmp * DEPTHWIDTH + x_tmp)];
 				}
 			}
 			hr = DepthConvertMat(pBuffer2, COLORWIDTH, COLORHEIGHT, DepthInColorMat);
