@@ -116,7 +116,7 @@ GT_RES	KinectDriver::GetColorImage(RGBQUAD *ColorImg)
 			nBufferSize = COLORWIDTH * COLORHEIGHT * sizeof(RGBQUAD);
 			hr = pColorFrame->CopyConvertedFrameDataToArray(nBufferSize, reinterpret_cast<BYTE*>(pBuffer), ColorImageFormat_Bgra);
 		}
-		if (hr == GT_RES_OK)
+		if (SUCCEEDED(hr))
 		{
 			SafeRelease(pColorFrame);
 			return GT_RES_OK;
@@ -139,15 +139,16 @@ GT_RES	KinectDriver::GetDepthImage(UINT16 *DepthImg)
 	{
 		ColorImageFormat imageFormat = ColorImageFormat_None;
 		UINT nBufferSize = 0;
-		UINT16 *pBuffer = DepthImg;
+		UINT16 *pBuffer = NULL;
 
 		if (SUCCEEDED(hr))
 		{
 			nBufferSize = DEPTHWIDTH * DEPTHHEIGHT * sizeof(UINT16);
-			hr = pDepthFrame->CopyFrameDataToArray(nBufferSize, pBuffer);
+			hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
 		}
-		if (hr == GT_RES_OK)
+		if (SUCCEEDED(hr))
 		{
+			memcpy(DepthImg, pBuffer, DEPTHWIDTH * DEPTHHEIGHT * sizeof(UINT16));
 			SafeRelease(pDepthFrame);
 			return GT_RES_OK;
 		}
@@ -338,6 +339,24 @@ GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSp
 	return GT_RES_OK;
 }
 
+GT_RES	KinectDriver::Colorpos2Camerapos(const std::vector<ColorSpacePoint> Colorpos, std::vector<CameraSpacePoint> &Camerapos)
+{
+	size_t posSize = Colorpos.size();
+	for (size_t i = 0; i < posSize; i++)
+	{
+		CameraSpacePoint pos_tmp;
+		GT_RES res;
+		res = Colorpos2Camerapos(Colorpos[i], pos_tmp);
+		if (res != GT_RES_OK)
+		{
+			printf("Colorpos to Camerapos failed with error:%02x\n", res);
+			return res;
+		}
+		Camerapos.push_back(pos_tmp);
+	}
+	return GT_RES_OK;
+}
+
 GT_RES	KinectDriver::Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpacePoint &Depthpos)
 {
 	GT_RES res;
@@ -386,5 +405,23 @@ GT_RES	KinectDriver::Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpac
 	}
 	//Get DepthSpace pos from Color pos,(Xrgb,Yrgb)->Depth
 	Depthpos = m_pColorInDepthSpace[((unsigned int)Colorpos.Y*COLORHEIGHT + (unsigned int)Colorpos.X)];
+	return GT_RES_OK;
+}
+
+GT_RES	KinectDriver::Colorpos2Depthpos(const std::vector<ColorSpacePoint> Colorpos, std::vector<DepthSpacePoint> &Depthpos)
+{
+	size_t posSize = Colorpos.size();
+	for (size_t i = 0; i < posSize; i++)
+	{
+		DepthSpacePoint pos_tmp;
+		GT_RES res;
+		res = Colorpos2Depthpos(Colorpos[i], pos_tmp);
+		if (res != GT_RES_OK)
+		{
+			printf("Colorpos to Depthpos failed with error:%02x\n", res);
+			return res;
+		}
+		Depthpos.push_back(pos_tmp);
+	}
 	return GT_RES_OK;
 }

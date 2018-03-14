@@ -40,9 +40,11 @@ public:
 
 	//根据彩色空间坐标，给出相机空间坐标
 	GT_RES	Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSpacePoint &Camerapos);
+	GT_RES	Colorpos2Camerapos(const std::vector<ColorSpacePoint> Colorpos, std::vector<CameraSpacePoint> &Camerapos);
 
 	//根据彩色空间坐标，给出深度空间坐标
 	GT_RES	Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpacePoint &Depthpos);
+	GT_RES	Colorpos2Depthpos(const std::vector<ColorSpacePoint> Colorpos, std::vector<DepthSpacePoint> &Depthpos);
 
 	//从彩色图像中的位置得到机器人实际的抓取位置和姿态(x, y, theta)->(x, y, z, Rx, Ry, Rz)
 	GT_RES	ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR);

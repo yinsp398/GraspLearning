@@ -78,14 +78,8 @@ bool OpenUR5()
 bool Init()
 {
 	GT_RES res;
-	count = 8;
+	count = 11;
 	m_pKinect = new KinectDriver;
-	if (res != GT_RES_OK)
-	{
-		printf("open kinect failed with error:%02x\n", res);
-		return false;
-	}
-	
 	
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
@@ -95,12 +89,10 @@ bool Init()
 
 bool Uninit()
 {
-	m_pUR5->DisableRobot();
 	delete m_pGraph->ColorImg;
 	delete m_pGraph->DepthImg;
 	delete m_pGraph;
 	delete m_pKinect;
-	delete m_pUR5;
 	return true;
 }
 
@@ -177,7 +169,7 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 		std::cout << "Get more than one circles:" << circles.size() << std::endl;
 		float CircleCnt = circles.size();
 		float x=0, y=0;
-		for (size_t i; i < CircleCnt; i++)
+		for (size_t i=0; i < CircleCnt; i++)
 		{
 			x += circles[i][0];
 			y += circles[i][1];
@@ -236,18 +228,13 @@ bool TestKinect()
 
 	//Initialize the Kinect driver
 	m_pKinect = new KinectDriver;
-	if (res != GT_RES_OK)
-	{
-		printf("open kinect failed with error:%02x\n", res);
-		return false;
-	}
 	//Initialize the struct graph to store image
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
 	//Get the Kinect image(Color & depth & depth in color frame)
 					
-	Sleep(2000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
+	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
 	for (int i = 0; i < 10; i++)
 	{
 		res = GT_RES_ERROR;
@@ -289,20 +276,37 @@ bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg)
 	}
 	return true;
 }
+bool IsInLimit(CameraSpacePoint pos)
+{
+	if (pos.X > 2.0 || pos.X < -2.0)
+		return false;
+	if (pos.Y > 2.0 || pos.Y < -2.0)
+		return false;
+	if (pos.Z > 1.1 || pos.Z < 0.8)
+		return false;
+	return true;
+}
 int main()
 {
 #if 0
 	Init();
+	TestKinect();
+#elif 0
+	Init();
 	printf("Init OK\n");
-	Sleep(2000);
-	m_pKinect->GetKinectImage(m_pGraph);
+	Sleep(3000);
+	GT_RES res;
+	res = m_pKinect->GetKinectImage(m_pGraph);
+	if (res != GT_RES_OK)
+	{
+		printf("GetKinectImage failed with error:%02x\n", res);
+		return res;
+	}
 	cv::Mat DepthImg(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
-	cv::Mat DepthInColorImg(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	//GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
+	GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
 	//GetBYTEformat(m_pGraph->DepthInColorImg, &DepthInColorImg);
 	cv::imwrite("colorimg.jpg", *(m_pGraph->ColorImg));
-	cv::imwrite("depthimg.jpg", *(m_pGraph->DepthImg));
-	cv::imwrite("depthincolorimg.jpg", *(m_pGraph->DepthInColorImg));
+	cv::imwrite("depthimg.jpg", DepthImg);
 	return 0;
 #elif 1
 	GT_RES res;
@@ -326,12 +330,38 @@ int main()
 			std::cout << "get image center failed" << std::endl;
 			continue;
 		}
-		ColorSpacePoint Colorpos;
+		std::vector<ColorSpacePoint> v_Colorpos;
+		std::vector<CameraSpacePoint> v_Camerapos;
+		for (size_t i = 0; i < 9; i++)
+		{
+			for (size_t j = 0; j < 9; j++)
+			{
+				ColorSpacePoint pos_tmp;
+				pos_tmp.X = pos.x + i - 4;
+				pos_tmp.Y = pos.y + j - 4;
+				v_Colorpos.push_back(pos_tmp);
+			}
+		}
+		res = m_pKinect->Colorpos2Camerapos(v_Colorpos, v_Camerapos);
+		if (res != GT_RES_OK)
+		{
+			std::cout << "Coordiante color to camera failed with error:" << res << std::endl;
+			continue;
+		}
 		CameraSpacePoint Camerapos;
-		Colorpos.X = pos.x;
-		Colorpos.Y = pos.y;
-		Pose3D	posUR;
-		res = m_pKinect->Colorpos2Camerapos(Colorpos, Camerapos);
+		Camerapos.X = v_Camerapos[4].X;
+		Camerapos.Y = v_Camerapos[4].Y;
+		Camerapos.Z = 0;
+		int sizeCnt = 0;
+		for (size_t i = 0; i < v_Camerapos.size(); i++)
+		{
+			if (IsInLimit(v_Camerapos[i]))
+			{
+				Camerapos.Z += v_Camerapos[i].Z;
+				sizeCnt++;
+			}
+		}
+		Camerapos.Z /= sizeCnt;
 
 		fp << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z <<"\t";
 		std::cout << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z << "\t";
