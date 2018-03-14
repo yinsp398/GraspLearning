@@ -246,6 +246,7 @@ bool TestKinect()
 				//printf("Get Kinect image error:%02x\n", res);
 			}
 		}
+
 		std::string prefix("ColorImg");
 		
 #ifdef _DEBUG_PRINT_
@@ -318,6 +319,7 @@ int main()
 	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
+		
 		std::cin.get();
 		res = m_pKinect->GetKinectImage(m_pGraph);
 		if (res != GT_RES_OK)
@@ -332,13 +334,13 @@ int main()
 		}
 		std::vector<ColorSpacePoint> v_Colorpos;
 		std::vector<CameraSpacePoint> v_Camerapos;
-		for (size_t i = 0; i < 9; i++)
+		for (size_t i = 0; i < 5; i++)
 		{
-			for (size_t j = 0; j < 9; j++)
+			for (size_t j = 0; j < 5; j++)
 			{
 				ColorSpacePoint pos_tmp;
-				pos_tmp.X = pos.x + i - 4;
-				pos_tmp.Y = pos.y + j - 4;
+				pos_tmp.X = pos.x + i -2;
+				pos_tmp.Y = pos.y + j -2;
 				v_Colorpos.push_back(pos_tmp);
 			}
 		}
@@ -349,23 +351,27 @@ int main()
 			continue;
 		}
 		CameraSpacePoint Camerapos;
-		Camerapos.X = v_Camerapos[4].X;
-		Camerapos.Y = v_Camerapos[4].Y;
+		Camerapos.X = 0;
+		Camerapos.Y = 0;
 		Camerapos.Z = 0;
 		int sizeCnt = 0;
 		for (size_t i = 0; i < v_Camerapos.size(); i++)
 		{
 			if (IsInLimit(v_Camerapos[i]))
 			{
+				Camerapos.X += v_Camerapos[i].X;
+				Camerapos.Y += v_Camerapos[i].Y;
 				Camerapos.Z += v_Camerapos[i].Z;
 				sizeCnt++;
 			}
 		}
+		Camerapos.X /= sizeCnt;
+		Camerapos.Y /= sizeCnt;
 		Camerapos.Z /= sizeCnt;
 
-		fp << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z <<"\t";
-		std::cout << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z << "\t";
-
+		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z <<"\t";
+		std::cout << sizeCnt <<Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
+		
 		std::cin.get();
 
 		m_pUR5 = new UR5SocketCom;
@@ -382,8 +388,8 @@ int main()
 			delete m_pUR5;
 			continue;
 		}
-		fp << pos.x << " " << pos.y << " " << pos.z << std::endl;
-		std::cout << pos.x << " " << pos.y << " " << pos.z << std::endl;
+		fp << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
+		std::cout << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
 		if (!m_pUR5->DisableRobot())
 		{
 			std::cout << "disable UR5 failed: '%s'" << m_pUR5->GetLastError().c_str() << std::endl;
