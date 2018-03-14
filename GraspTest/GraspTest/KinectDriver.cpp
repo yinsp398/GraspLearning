@@ -335,7 +335,7 @@ GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSp
 		}
 	}
 	//Get CameraSpace pos from Color pos,(Xrgb,Yrgb,Depth)->(Xc,Yc,Zc)
-	Camerapos = m_pColorInCameraSpace[((unsigned int)Colorpos.Y*COLORHEIGHT + (unsigned int)Colorpos.X)];
+	Camerapos = m_pColorInCameraSpace[((unsigned int)Colorpos.Y*COLORWIDTH + (unsigned int)Colorpos.X)];
 	return GT_RES_OK;
 }
 
@@ -404,7 +404,7 @@ GT_RES	KinectDriver::Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpac
 		}
 	}
 	//Get DepthSpace pos from Color pos,(Xrgb,Yrgb)->Depth
-	Depthpos = m_pColorInDepthSpace[((unsigned int)Colorpos.Y*COLORHEIGHT + (unsigned int)Colorpos.X)];
+	Depthpos = m_pColorInDepthSpace[((unsigned int)Colorpos.Y*COLORWIDTH + (unsigned int)Colorpos.X)];
 	return GT_RES_OK;
 }
 
