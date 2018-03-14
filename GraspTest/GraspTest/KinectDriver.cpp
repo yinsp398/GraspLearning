@@ -395,7 +395,7 @@ GT_RES	KinectDriver::Colorpos2Depthpos(const ColorSpacePoint Colorpos, DepthSpac
 	//Check if Colorframe to Depth Space Matrix have been got, if not , get it!(this maxtrix will be delete when get Kinect image)
 	if (!m_pColorInDepthSpace)
 	{
-		m_pColorInDepthSpace = new DepthSpacePoint[DEPTHHEIGHT*DEPTHWIDTH];
+		m_pColorInDepthSpace = new DepthSpacePoint[COLORWIDTH*COLORHEIGHT];
 		hr = m_pCoordinateMapper->MapColorFrameToDepthSpace(DEPTHWIDTH*DEPTHHEIGHT, m_pDepthImage, COLORWIDTH*COLORHEIGHT, m_pColorInDepthSpace);
 		if (FAILED(hr))
 		{
