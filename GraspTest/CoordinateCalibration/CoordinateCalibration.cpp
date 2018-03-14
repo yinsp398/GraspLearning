@@ -36,7 +36,16 @@ bool GetCirclePos(cv::Mat image,Pose &pos);
 bool GetLinePos(cv::Mat Image, Pose &pos);
 bool OpenUR5();
 Pose CrossPoint(cv::Vec2f line1, cv::Vec2f line2);
+bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg);
+bool IsInLimit(CameraSpacePoint pos);
+bool MovetoPos(Pose3D URpos);
+bool ResetPos();
+bool TestSaveMoreThanOneImage();
+bool TestCalibration();
+bool TestShowImage();
+bool TestVerifyTransMat();
 
+//启动UR5
 bool OpenUR5()
 {
 	//与UR5服务器通信打开
@@ -74,11 +83,10 @@ bool OpenUR5()
 	}
 	return true;
 }
-
+//初始化Kinect和图像矩阵
 bool Init()
 {
-	GT_RES res;
-	count = 11;
+	count = 1;
 	m_pKinect = new KinectDriver;
 	
 	m_pGraph = new Graphics;
@@ -95,7 +103,7 @@ bool Uninit()
 	delete m_pKinect;
 	return true;
 }
-
+//获取图像中心位置（实际未使用）
 bool GetCenterPos(Pose &pos)
 {
 	Pose posCircle,posLine;
@@ -118,7 +126,7 @@ bool GetCenterPos(Pose &pos)
 	pos = posLine;
 	return true;
 }
-
+//获取机器人当前TCP位置
 bool GetRobotPos(Pose &pos)
 {
 	Pose3D pos3;
@@ -128,7 +136,7 @@ bool GetRobotPos(Pose &pos)
 	pos.z = pos3.z;
 	return true;
 }
-
+//从图中识别圆形
 bool GetCirclePos(cv::Mat Image,Pose &pos)
 {
 	if (!(Image.data))
@@ -147,10 +155,9 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 		circle(*(m_pGraph->ColorImg), center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
 		circle(*(m_pGraph->ColorImg), center, radius, cv::Scalar(0, 255, 0), 6, 8, 0);
 		std::cout << "radius" << radius << std::endl;
-		cv::imwrite("image" + std::to_string(count) + ".jpg", *(m_pGraph->ColorImg));
-		count++;
 	}
-
+	count++;
+	cv::imwrite("image" + std::to_string(count) + ".jpg", *(m_pGraph->ColorImg));
 #endif
 	if (circles.size() == 0)
 	{
@@ -179,7 +186,7 @@ bool GetCirclePos(cv::Mat Image,Pose &pos)
 		return true;
 	}
 }
-
+//从图中识别直线（实际未使用）
 bool GetLinePos(cv::Mat Image, Pose &pos)
 {
 	if (!(Image.data))
@@ -211,7 +218,7 @@ bool GetLinePos(cv::Mat Image, Pose &pos)
 	pos.y /= count*1.0;
 	return true;
 }
-
+//获取两直线的交叉点位置（实际未使用）
 Pose CrossPoint(cv::Vec2f line1, cv::Vec2f line2)
 {
 	float rho1 = line1[0], rho2 = line2[0];
@@ -221,49 +228,7 @@ Pose CrossPoint(cv::Vec2f line1, cv::Vec2f line2)
 	pos.x = rho1*sin(theta1)*tan(theta1)-pos.y*tan(theta1)+rho1*cos(theta1);
 	return pos;
 }
-
-bool TestKinect()
-{
-	GT_RES res;
-
-	//Initialize the Kinect driver
-	m_pKinect = new KinectDriver;
-	//Initialize the struct graph to store image
-	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
-	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	//Get the Kinect image(Color & depth & depth in color frame)
-					
-	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
-	for (int i = 0; i < 10; i++)
-	{
-		res = GT_RES_ERROR;
-		while (res != GT_RES_OK)
-		{
-			res = m_pKinect->GetKinectImage(m_pGraph);
-			if (res != GT_RES_OK)
-			{
-				//printf("Get Kinect image error:%02x\n", res);
-			}
-		}
-
-		std::string prefix("ColorImg");
-		
-#ifdef _DEBUG_PRINT_
-		std::cout << "Saving image:" + prefix + std::to_string(i) + ".jpg" << std::endl;
-#endif
-		bool bl = cv::imwrite(prefix + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
-		if (!bl)
-		{
-			std::cout << "save image failed" << std::endl;
-			return false;
-		}
-	}
-	std::cout << "Kinect can save more than one image" << std::endl;
-
-	return true;
-}
-
+//将UINT16格式深度图转换为BYTE（仅保留距离低8位的细节信息）
 bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg)
 {
 	int nWidth = DepthImg->size.p[1];
@@ -277,6 +242,7 @@ bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg)
 	}
 	return true;
 }
+//判断相机坐标是否超出范围
 bool IsInLimit(CameraSpacePoint pos)
 {
 	if (pos.X > 2.0 || pos.X < -2.0)
@@ -287,29 +253,87 @@ bool IsInLimit(CameraSpacePoint pos)
 		return false;
 	return true;
 }
-int main()
+//阻塞方式运动到指定点
+bool MovetoPos(Pose3D URpos)
 {
-#if 0
-	Init();
-	TestKinect();
-#elif 0
-	Init();
-	printf("Init OK\n");
-	Sleep(3000);
-	GT_RES res;
-	res = m_pKinect->GetKinectImage(m_pGraph);
-	if (res != GT_RES_OK)
+	UR5SocketCom_Status status = m_pUR5->GetStatus();
+	if (status != UR5SocketCom_RobotIdle && status != UR5SocketCom_Success)
 	{
-		printf("GetKinectImage failed with error:%02x\n", res);
-		return res;
+		printf("UR5 Robot's status is %u.\n", status);
+		return false;
 	}
-	cv::Mat DepthImg(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
-	GetBYTEformat(m_pGraph->DepthImg, &DepthImg);
-	//GetBYTEformat(m_pGraph->DepthInColorImg, &DepthInColorImg);
-	cv::imwrite("colorimg.jpg", *(m_pGraph->ColorImg));
-	cv::imwrite("depthimg.jpg", DepthImg);
-	return 0;
-#elif 1
+	if (!(m_pUR5->MoveTCP(URpos)))
+	{
+		printf("MoveTCP failed!\n");
+		return false;
+	}
+	Sleep(50);	//Wait until Robot change to Move station
+	while ((status = m_pUR5->GetStatus()) != UR5SocketCom_RobotIdle)
+	{
+		Sleep(8);
+	}
+	return true;
+}
+//回复到指定位置
+bool ResetPos()
+{
+	Pose3D pos;
+	pos.Set(POSE1);
+	return MovetoPos(pos);
+}
+//测试存储多幅图片，深度和彩色
+bool TestSaveMoreThanOneImage()
+{
+	GT_RES res;
+
+	//Initialize the Kinect driver
+	m_pKinect = new KinectDriver;
+	//Initialize the struct graph to store image
+	m_pGraph = new Graphics;
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	//Get the Kinect image(Color & depth & depth in color frame)
+
+	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
+	for (int i = 0; i < 10; i++)
+	{
+		res = GT_RES_ERROR;
+		while (res != GT_RES_OK)
+		{
+			res = m_pKinect->GetKinectImage(m_pGraph);
+			if (res != GT_RES_OK)
+			{
+				//printf("Get Kinect image error:%02x\n", res);
+			}
+		}
+
+		std::string prefix1("ColorImg");
+		std::string prefix2("DepthImg");
+		std::string prefix3("DepthInBYTEImg");
+		cv::Mat DepthInBYTEImg;
+		GetBYTEformat(m_pGraph->DepthImg, &DepthInBYTEImg);
+
+#ifdef _DEBUG_PRINT_
+		std::cout << "Saving image:" << prefix1 << i << ".jpg," << prefix2 << i << ".jpg," << prefix3 << i << ".jpg" << std::endl;
+#endif
+		bool bl1, bl2, bl3;
+		bl1 = cv::imwrite(prefix1 + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
+		bl2 = cv::imwrite(prefix2 + std::to_string(i) + ".jpg", *(m_pGraph->DepthImg));
+		bl3 = cv::imwrite(prefix3 + std::to_string(i) + ".jpg", DepthInBYTEImg);
+
+		if (!(bl1&&bl2&&bl3))
+		{
+			std::cout << "save image failed" << std::endl;
+			return false;
+		}
+	}
+	std::cout << "Kinect can save more than one image" << std::endl;
+
+	return true;
+}
+//测试进行Robot和Camera坐标系校准
+bool TestCalibration()
+{
 	GT_RES res;
 	Pose pos;
 	Init();
@@ -319,7 +343,7 @@ int main()
 	Sleep(2000);
 	for (size_t i = 0; i < 10; i++)
 	{
-		
+
 		std::cin.get();
 		res = m_pKinect->GetKinectImage(m_pGraph);
 		if (res != GT_RES_OK)
@@ -327,7 +351,7 @@ int main()
 			std::cout << "Get image error\n" << std::endl;
 			continue;
 		}
-		if (!GetCirclePos(*(m_pGraph->ColorImg),pos))
+		if (!GetCirclePos(*(m_pGraph->ColorImg), pos))
 		{
 			std::cout << "get image center failed" << std::endl;
 			continue;
@@ -339,8 +363,8 @@ int main()
 			for (size_t j = 0; j < 5; j++)
 			{
 				ColorSpacePoint pos_tmp;
-				pos_tmp.X = pos.x + i -2;
-				pos_tmp.Y = pos.y + j -2;
+				pos_tmp.X = pos.x + i - 2;
+				pos_tmp.Y = pos.y + j - 2;
 				v_Colorpos.push_back(pos_tmp);
 			}
 		}
@@ -368,12 +392,11 @@ int main()
 		Camerapos.X /= sizeCnt;
 		Camerapos.Y /= sizeCnt;
 		Camerapos.Z /= sizeCnt;
-		
-		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z <<"\t";
-		std::cout << sizeCnt << "\n" <<Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
+
+		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
+		std::cout << sizeCnt << "\n" << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
 		fp << "\n";
 
-		continue;
 		std::cin.get();
 
 		m_pUR5 = new UR5SocketCom;
@@ -403,55 +426,93 @@ int main()
 	}
 	fp.close();
 	Uninit();
-#else
+	return true;
+}
+//测试显示图片窗口
+bool TestShowImage()
+{
 	Init();
 	printf("Init Ok\n");
 	Sleep(2000);
 	m_pKinect->GetKinectImage(m_pGraph);
-	/*cv::Mat binary;
-	Canny(*(m_pGraph->ColorImg), binary, 50, 100, 3);
-	
-	std::vector<cv::Vec2f> lines;
-	HoughLines(binary, lines, 1, CV_PI / 180, 200, 0, 0);
-	std::cout << "line number:" << lines.size() << std::endl;
-	for (size_t i = 0; i < lines.size(); i++)
-	{
-		float rho = lines[i][0];
-		float theta = lines[i][1];
-		double a = cos(theta), b = sin(theta);
-		cv::Point pt1, pt2;
 
-		pt1.x = cvRound(a*rho + 1000 * (-b));
-		pt1.y = cvRound(b*rho + 1000 * (a));
-		pt2.x = cvRound(a*rho + 1000 * (b));
-		pt2.y = cvRound(b*rho + 1000 * (-a));
-
-
-		line(*(m_pGraph->ColorImg), pt1, pt2, cv::Scalar(255, 0, 255), 1, 8);
-		std::cout << rho << " " << theta << std::endl;
-	}
-	*/
-	cv::Mat grayImage;
-	cv::GaussianBlur(*(m_pGraph->ColorImg), grayImage, cv::Size(7, 7), 2, 2);
-	std::vector<cv::Vec3f> circles;
-	std::vector<cv::Vec3f> circle_tmp;
-	HoughCircles(grayImage, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 200, 100, 130);
-	std::cout << circles.size() << std::endl;
-	for (size_t i = 0; i < circles.size(); i++)
-	{
-		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-		int radius = cvRound(circles[i][2]);
-		circle(*(m_pGraph->ColorImg), center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-		circle(*(m_pGraph->ColorImg), center, radius, cv::Scalar(155, 50, 255), 5, 8, 0);
-		std::cout << "radius" << radius << std::endl;
-	}
 	cv::namedWindow("test", CV_WINDOW_NORMAL);
-	
+
 	cv::imshow("test", *(m_pGraph->ColorImg));
-	
+
 	cv::waitKey(0);
+
+	return true;
+}
+//测试转换矩阵精度
+bool TestVerifyTransMat()
+{
+	Pose pos;
+	Init();
+	m_pUR5 = new UR5SocketCom;
+	GT_RES res;
+	if (!OpenUR5())
+	{
+		std::cout << "open UR5 failed with error:" << res << std::endl;
+		delete m_pUR5;
+		return false;
+	}
+
+	printf("init ok\n");
+	Sleep(2000);
+	while (1)
+	{
+		//input 'Enter' :move to next step, input Space and 'Enter': End the program
+		if (std::cin.get() == ' ')
+			return true;
+		
+		res = m_pKinect->GetKinectImage(m_pGraph);
+		if (res != GT_RES_OK)
+		{
+			std::cout << "Get image error\n" << std::endl;
+			continue;
+		}
+		if (!GetCirclePos(*(m_pGraph->ColorImg), pos))
+		{
+			std::cout << "get image center failed" << std::endl;
+			continue;
+		}
+		GraspPose grasppos;
+		grasppos.x = pos.x;
+		grasppos.y = pos.y;
+		grasppos.theta = 0;
+		Pose3D URpos;
+		
+		res = m_pKinect->ColorDepth2Robot(grasppos, URpos);
+		if (res != GT_RES_OK)
+		{
+			std::cout << "Grasppos transform to URpos failed " << std::endl;
+			continue;
+		}
+
+		if (!MovetoPos(URpos))
+		{
+			std::cout << "Move to pos failed" << std::endl;
+			continue;
+		}
+
+		if (std::cin.get() == ' ')
+			return true;
+
+		if (!ResetPos())
+		{
+			std::cout << "Reset UR pos failed" << std::endl;
+			continue;
+		}
+	}
+	return true;
+}
+
+int main()
+{
+
+	TestVerifyTransMat();
 	
-#endif
     return 0;
 }
 

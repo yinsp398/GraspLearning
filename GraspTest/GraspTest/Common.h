@@ -59,18 +59,18 @@
 #define		PREDICTPATH						"../dataset/Predict.txt"	//预测每次抓取的成功率的文件路径
 #define		RESULTPATH						"../dataset/Result.txt"		//每次抓取结果的文件路径
 
-#define		COLOR2ROBOT11					1							//像素坐标系到机器人坐标系的转换矩阵元素
-#define		COLOR2ROBOT12					1	
-#define		COLOR2ROBOT13					1	
-#define		COLOR2ROBOT14					1	
-#define		COLOR2ROBOT21					1	
-#define		COLOR2ROBOT22					1	
-#define		COLOR2ROBOT23					1	
-#define		COLOR2ROBOT24					1	
-#define		COLOR2ROBOT31					1	
-#define		COLOR2ROBOT32					1	
-#define		COLOR2ROBOT33					1	
-#define		COLOR2ROBOT34					1	
+#define		COLOR2ROBOT11					0.32133						//像素坐标系到机器人坐标系的转换矩阵元素
+#define		COLOR2ROBOT12					-0.93730	
+#define		COLOR2ROBOT13					-0.10239
+#define		COLOR2ROBOT14					0.13511
+#define		COLOR2ROBOT21					-0.94147	
+#define		COLOR2ROBOT22					-0.30964	
+#define		COLOR2ROBOT23					-0.11571	
+#define		COLOR2ROBOT24					-0.45551	
+#define		COLOR2ROBOT31					0.06166	
+#define		COLOR2ROBOT32					0.16098	
+#define		COLOR2ROBOT33					-0.93716	
+#define		COLOR2ROBOT34					0.90480	
 #define		ANGLEBIAS						0							//抓取角度从图像到机器人坐标系的偏置
 
 #define		COLORFORMAT						CV_8UC1						//图像在cv mat中的存储格式，8位，一个通道的灰度图

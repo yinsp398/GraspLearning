@@ -1,18 +1,1 @@
-﻿  CoordinateCalibration.cpp
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\mat.hpp(1965): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\persistence.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
-c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(17): warning C4005: “_WINSOCKAPI_”: 宏重定义
-  c:\program files (x86)\windows kits\8.1\include\um\winsock2.h(17): note: 命令行参数: 参见前面的“_WINSOCKAPI_”定义
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(80): warning C4101: “res”: 未引用的局部变量
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(126): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(127): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(128): warning C4244: “=”: 从“double”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(170): warning C4244: “初始化”: 从“unsigned __int64”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(210): warning C4244: “/=”: 从“double”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(211): warning C4244: “/=”: 从“double”转换到“float”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(275): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
-e:\work\4_ur5_project\2_code\grasplearning\grasptest\coordinatecalibration\coordinatecalibration.cpp(181): warning C4715: “GetCirclePos”: 不是所有的控件路径都返回值
-  CoordinateCalibration.vcxproj -> E:\Work\4_UR5_Project\2_Code\GraspLearning\GraspTest\x64\Debug\CoordinateCalibration.exe
-  CoordinateCalibration.vcxproj -> E:\Work\4_UR5_Project\2_Code\GraspLearning\GraspTest\x64\Debug\CoordinateCalibration.pdb (Full PDB)
+﻿

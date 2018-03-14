@@ -251,7 +251,7 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 	CameraSpacePoint Camerapos;
 	Colorpos.X = posColor.x;
 	Colorpos.Y = posColor.y;
-
+	//是否要取多个点做平均？？
 	res = Colorpos2Camerapos(Colorpos, Camerapos);
 	if (res != GT_RES_OK)
 	{
@@ -259,8 +259,8 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 	}
 	//transform the CameraSpace pos to RobotSpace pos by Matrix T,Mat_Robot = Mat_Trans * Mat_Camera(Mat_Trans is got by calibrated in CoordinateCaliabration project)
 	cv::Mat MatCamera(cv::Size(1, 4), CV_32F);
-	cv::Mat MatUR(cv::Size(1, 4), CV_32F);
-	cv::Mat MatTrans(cv::Size(3, 3), CV_32F);
+	cv::Mat MatUR(cv::Size(1, 3), CV_32F);
+	cv::Mat MatTrans(cv::Size(4, 3), CV_32F);
 	MatCamera.at<float>(0, 0) = Camerapos.X;
 	MatCamera.at<float>(1, 0) = Camerapos.Y;
 	MatCamera.at<float>(2, 0) = Camerapos.Z;
