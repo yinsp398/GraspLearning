@@ -60,14 +60,14 @@ bool OpenUR5()
 	}
 	//设置TCP
 	Pose3D	define_TCP;
-	define_TCP.Set(0.0, 0.0, 0.2, 0.0, 0.0, 0.0);
+	define_TCP.Set(TCPPOSE);
 	if (!m_pUR5->SetTCPTransformation(define_TCP))
 	{
 		printf("define TCP failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
 	}
 	//设置负载重量
-	if (!m_pUR5->SetPayload(1.0, 0.0, 0.0, 0.05))
+	if (!m_pUR5->SetPayload(PAYLOAD))
 	{
 		printf("define payload failed: '%s'\n", m_pUR5->GetLastError().c_str());
 		return false;
@@ -368,10 +368,12 @@ int main()
 		Camerapos.X /= sizeCnt;
 		Camerapos.Y /= sizeCnt;
 		Camerapos.Z /= sizeCnt;
-
-		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z <<"\t";
-		std::cout << sizeCnt <<Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
 		
+		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z <<"\t";
+		std::cout << sizeCnt << "\n" <<Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
+		fp << "\n";
+
+		continue;
 		std::cin.get();
 
 		m_pUR5 = new UR5SocketCom;

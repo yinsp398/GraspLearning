@@ -41,14 +41,14 @@ GT_RES RobotDriver::OpenUR()
 	}
 	//设置TCP
 	Pose3D	define_TCP;
-	define_TCP.Set(0.0,0.0,0.0,0.0,0.0,0.0);
+	define_TCP.Set(TCPPOSE);
 	if (!(ur5->SetTCPTransformation(define_TCP)))
 	{
 		printf("define TCP failed: '%s'\n", ur5->GetLastError().c_str());
 		return GT_RES_DEVICEERROR;
 	}
 	//设置负载重量
-	if (!(ur5->SetPayload(1.0, 0.0, 0.0, 0.05)))
+	if (!(ur5->SetPayload(PAYLOAD)))
 	{
 		printf("define payload failed: '%s'\n",ur5->GetLastError().c_str());
 		return GT_RES_DEVICEERROR;

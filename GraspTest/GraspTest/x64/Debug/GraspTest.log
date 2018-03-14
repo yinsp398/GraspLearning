@@ -1,1 +1,10 @@
-﻿
+﻿  KinectDriver.cpp
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\mat.hpp(1965): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\persistence.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\kinectdriver.cpp(224): warning C4267: “参数”: 从“size_t”转换到“int”，可能丢失数据
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\kinectdriver.cpp(252): warning C4244: “=”: 从“const unsigned int”转换到“float”，可能丢失数据
+e:\work\4_ur5_project\2_code\grasplearning\grasptest\grasptest\kinectdriver.cpp(253): warning C4244: “=”: 从“const unsigned int”转换到“float”，可能丢失数据
+  GraspTest.vcxproj -> E:\Work\4_UR5_Project\2_Code\GraspLearning\GraspTest\x64\Debug\GraspTest.exe
+  GraspTest.vcxproj -> E:\Work\4_UR5_Project\2_Code\GraspLearning\GraspTest\x64\Debug\GraspTest.pdb (Full PDB)

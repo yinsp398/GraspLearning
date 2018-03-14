@@ -26,6 +26,8 @@
 #define		PI								3.14159265359
 #define		POSE1							0.1,-0.1,0.5,PI,0,PI		//关键路径节点1
 #define		POSE2							0.2,-0.5,0.5,PI,0,PI		//关键路径节点2
+#define		TCPPOSE							0.0,0.0,0.16,0.0,0.0,0.0	//TCP位置
+#define		PAYLOAD							1.0,0.0,0.0,0.05			//负载大小及重心位置
 
 #define		COUNT_TIMEOUT					100							//设置NN的超时次数
 #define		TIME_TOWAIT						15000						//设置UR5和kinect的超时时间15000
