@@ -44,6 +44,7 @@ bool TestSaveMoreThanOneImage();
 bool TestCalibration();
 bool TestShowImage();
 bool TestVerifyTransMat();
+bool TestErrorUR5();
 
 //Æô¶¯UR5
 bool OpenUR5()
@@ -508,11 +509,68 @@ bool TestVerifyTransMat()
 	return true;
 }
 
+bool TestErrorUR5(int Num)
+{
+	m_pUR5 = new UR5SocketCom;
+	if (!OpenUR5())
+	{
+		std::cout << "open UR5 failed" << std::endl;
+		delete m_pUR5;
+		return false;
+	}
+	printf("init ok\n");
+	Pose3D *error = new Pose3D[Num];
+	Pose3D pos,pos2,sum,max;
+	max.Set(0, 0, 0, 0, 0, 0);
+
+	pos2 = m_pUR5->GetTCPPose();
+
+	for (size_t i = 0; i < Num; i++)
+	{
+		pos.Set(POSE2);
+		/*if (!MovetoPos(pos))
+		{
+			std::cout << "Moveto pos failed" << std::endl;
+			return false;
+		}*/
+		Sleep(500);
+		pos = pos2;
+		pos2 = m_pUR5->GetTCPPose();
+		error[i].x = pos2.x - pos.x;
+		error[i].y = pos2.y - pos.y;
+		error[i].z = pos2.z - pos.z;
+		error[i].Rx = pos2.Rx - pos.Rx;
+		error[i].Ry = pos2.Ry - pos.Ry;
+		error[i].Rz = pos2.Rz - pos.Rz;
+		std::cout << error[i].ToString() << std::endl;
+		sum.x += fabs(error[i].x);
+		sum.y += fabs(error[i].y);
+		sum.z += fabs(error[i].z);
+		sum.Rx += fabs(error[i].Rx);
+		sum.Ry += fabs(error[i].Ry);
+		sum.Rz += fabs(error[i].Rz);
+		max.x = MAX(max.x, fabs(error[i].x));
+		max.y = MAX(max.y, fabs(error[i].y));
+		max.z = MAX(max.z, fabs(error[i].z));
+		max.Rx = MAX(max.Rx, fabs(error[i].Rx));
+		max.Ry = MAX(max.Ry, fabs(error[i].Ry));
+		max.Rz = MAX(max.Rz, fabs(error[i].Rz));
+		//ResetPos();
+	}
+	sum.x /= Num;
+	sum.y /= Num;
+	sum.z /= Num;
+	sum.Rx /= Num;
+	sum.Ry /= Num;
+	sum.Rz /= Num;
+	std::cout << "average:" << sum.ToString() << std::endl;
+	std::cout << "max:" << max.ToString() << std::endl;
+	return true;
+}
+
 int main()
 {
-
-	TestVerifyTransMat();
-	
+	TestErrorUR5(30);
     return 0;
 }
 
