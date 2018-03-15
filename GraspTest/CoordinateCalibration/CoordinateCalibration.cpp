@@ -296,7 +296,7 @@ bool TestSaveMoreThanOneImage()
 	//Get the Kinect image(Color & depth & depth in color frame)
 
 	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 1; i++)
 	{
 		res = GT_RES_ERROR;
 		while (res != GT_RES_OK)
@@ -311,7 +311,7 @@ bool TestSaveMoreThanOneImage()
 		std::string prefix1("ColorImg");
 		std::string prefix2("DepthImg");
 		std::string prefix3("DepthInBYTEImg");
-		cv::Mat DepthInBYTEImg;
+		cv::Mat DepthInBYTEImg(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 		GetBYTEformat(m_pGraph->DepthImg, &DepthInBYTEImg);
 
 #ifdef _DEBUG_PRINT_
@@ -570,7 +570,7 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-	TestErrorUR5(30);
+	TestSaveMoreThanOneImage();
     return 0;
 }
 
