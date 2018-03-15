@@ -7,6 +7,7 @@ CameraMat = [coordinate(:,1:3)';ones(1,18)];
 TransMat = RobotMat * CameraMat' * inv(CameraMat*CameraMat');
 RobotMat_2 = TransMat * CameraMat;
 Aerr = RobotMat_2-RobotMat;
+ERR = Aerr*Aerr';
 Rerr = Aerr./RobotMat;
 TransMat
 Aerr
