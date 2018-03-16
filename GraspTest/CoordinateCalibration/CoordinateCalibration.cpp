@@ -11,16 +11,68 @@
 #include <fstream>
 
 #define _DEBUG_PRINT_
+#define _MAX_RADIUS_		120
+#define _DETAL_				5
 
 struct Pose {
 	float x;
 	float y;
 	float z;
+	Pose()
+	{
+		x = 0;
+		y = 0;
+		z = 0;
+	}
+	Pose(const float x1, const float y1, const float z1)
+	{
+		x = x1;
+		y = y1;
+		z = z1;
+	}
+	Pose(const Pose &pos)
+	{
+		x = pos.x;
+		y = pos.y;
+		z = pos.z;
+	}
 	void GetAverage(Pose pos)
 	{
 		x = (pos.x + x) / 2;
 		y = (pos.y + y) / 2;
 		z = (pos.z + z) / 2;
+	}
+	void Set(const float x1,const float y1,const float z1)
+	{
+		x = x1;
+		y = y1;
+		z = z1;
+	}
+	Pose operator+(const Pose &other)
+	{
+		Pose pos;
+		pos.x = this->x + other.x;
+		pos.y = this->y + other.y;
+		pos.z = this->z + other.z;
+		return pos;
+	}
+	Pose operator-(const Pose &other)
+	{
+		Pose pos;
+		pos.x = this->x - other.x;
+		pos.y = this->y - other.y;
+		pos.z = this->z - other.z;
+		return pos;
+	}
+	Pose operator/(const float &num)
+	{
+		Pose pos;
+		if (num == 0.0)
+			return pos;
+		pos.x = this->x / num;
+		pos.y = this->y / num;
+		pos.z = this->z / num;
+		return pos;
 	}
 };
 
@@ -87,7 +139,7 @@ bool OpenUR5()
 //初始化Kinect和图像矩阵
 bool Init()
 {
-	count = 1;
+	count = 0;
 	m_pKinect = new KinectDriver;
 	
 	m_pGraph = new Graphics;
@@ -137,55 +189,73 @@ bool GetRobotPos(Pose &pos)
 	pos.z = pos3.z;
 	return true;
 }
-//从图中识别圆形
-bool GetCirclePos(cv::Mat Image,Pose &pos)
+//在图片上绘制一个圆形
+bool DrawCircle(cv::Mat Image, Pose &pos)
 {
 	if (!(Image.data))
 	{
 		return false;
 	}
-	cv::GaussianBlur(Image, Image, cv::Size(7, 7), 2, 2);
-	std::vector<cv::Vec3f> circles;
-	HoughCircles(Image, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 200, 100, 130);
-
-#ifdef _DEBUG_PRINT_
-	for (size_t i = 0; i < circles.size(); i++)
-	{
-		cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-		int radius = cvRound(circles[i][2]);
-		circle(*(m_pGraph->ColorImg), center, 3, cv::Scalar(0, 255, 0), -1, 8, 0);
-		circle(*(m_pGraph->ColorImg), center, radius, cv::Scalar(0, 255, 0), 6, 8, 0);
-		std::cout << "radius" << radius << std::endl;
-	}
+	cv::Point center(cvRound(pos.x), cvRound(pos.y));
+	int radius = cvRound(pos.z);
+	circle(Image, center, 3, cv::Scalar(0, 255, 0), 1, 8, 0);
+	circle(Image, center, radius, cv::Scalar(0, 255, 0), 1, 8, 0);
+	cv::imwrite("image" + std::to_string(count) + ".jpg", Image);
 	count++;
-	cv::imwrite("image" + std::to_string(count) + ".jpg", *(m_pGraph->ColorImg));
-#endif
-	if (circles.size() == 0)
+	return true;
+}
+//从灰度图中识别圆形
+bool GetCirclePos(cv::Mat Image,Pose &posCircle)
+{
+	if (!(Image.data))
 	{
-		std::cout << "Get not any circle" << std::endl;
 		return false;
 	}
-	else if (circles.size() == 1)
+	Pose sum, pos;
+	for (size_t i = 0; i < _MAX_RADIUS_; i += _DETAL_)
 	{
-		pos.x = circles[0][0];
-		pos.y = circles[0][1];
-
-		return true;
-	}
-	else if (circles.size() > 1)
-	{
-		std::cout << "Get more than one circles:" << circles.size() << std::endl;
-		float CircleCnt = circles.size();
-		float x=0, y=0;
-		for (size_t i=0; i < CircleCnt; i++)
+		cv::Mat ImageGau;
+		cv::GaussianBlur(Image, ImageGau, cv::Size(7, 7), 2, 2);
+		std::vector<cv::Vec3f> circles;
+		HoughCircles(ImageGau, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 150, i, i+_DETAL_);
+		std::cout << i << "~" << i + _DETAL_ << ":";
+		if (circles.size() == 0)
 		{
-			x += circles[i][0];
-			y += circles[i][1];
+			std::cout << "Get not any circle" << std::endl;
+			continue;
 		}
-		pos.x = x / CircleCnt;
-		pos.y = y / CircleCnt;
-		return true;
+		else if (circles.size() == 1)
+		{
+			pos.x = circles[0][0];
+			pos.y = circles[0][1];
+			pos.z = circles[0][2];
+			std::cout << "radius " << pos.z << std::endl;
+
+		}
+		else if (circles.size() > 1)
+		{
+			std::cout << "Get more than one circles:" << circles.size() << std::endl;
+			float CircleCnt = circles.size();
+			float x = 0, y = 0, radius = 0;;
+			for (size_t i = 0; i < CircleCnt; i++)
+			{
+				x += circles[i][0];
+				y += circles[i][1];
+				radius += circles[i][2];
+				std::cout << "radius " << circles[i][2] << " ";
+			}
+			std::cout << std::endl;
+			pos.x = x / CircleCnt;
+			pos.y = y / CircleCnt;
+			pos.z = radius / CircleCnt;
+		}
+		DrawCircle(ImageGau, pos);
+		sum = sum + pos;
 	}
+	posCircle = sum / count;
+	DrawCircle(Image, posCircle);
+	count++;
+	return true;
 }
 //从图中识别直线（实际未使用）
 bool GetLinePos(cv::Mat Image, Pose &pos)
@@ -570,7 +640,9 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-	TestSaveMoreThanOneImage();
+
+	
+
     return 0;
 }
 
