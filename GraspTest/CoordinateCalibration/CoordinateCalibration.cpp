@@ -212,6 +212,7 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 		return false;
 	}
 	Pose sum, pos;
+	int CircleCnt = 0;
 	for (size_t i = 0; i < _MAX_RADIUS_; i += _DETAL_)
 	{
 		cv::Mat ImageGau;
@@ -221,20 +222,26 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 		std::cout << i << "~" << i + _DETAL_ << ":";
 		if (circles.size() == 0)
 		{
+#ifdef _DEBUG_PRINT_
 			std::cout << "Get not any circle" << std::endl;
 			continue;
+#endif
 		}
 		else if (circles.size() == 1)
 		{
 			pos.x = circles[0][0];
 			pos.y = circles[0][1];
 			pos.z = circles[0][2];
+#ifdef _DEBUG_PRINT_
 			std::cout << "radius " << pos.z << std::endl;
+#endif
 
 		}
 		else if (circles.size() > 1)
 		{
+#ifdef _DEBUG_PRINT_
 			std::cout << "Get more than one circles:" << circles.size() << std::endl;
+#endif
 			float CircleCnt = circles.size();
 			float x = 0, y = 0, radius = 0;;
 			for (size_t i = 0; i < CircleCnt; i++)
@@ -242,19 +249,23 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 				x += circles[i][0];
 				y += circles[i][1];
 				radius += circles[i][2];
+#ifdef _DEBUG_PRINT_
 				std::cout << "radius " << circles[i][2] << " ";
+#endif
 			}
 			std::cout << std::endl;
 			pos.x = x / CircleCnt;
 			pos.y = y / CircleCnt;
 			pos.z = radius / CircleCnt;
 		}
+#ifdef _DEBUG_PRINT_
 		DrawCircle(ImageGau, pos);
+#endif
 		sum = sum + pos;
+		CircleCnt++;
 	}
-	posCircle = sum / count;
+	posCircle = sum / CircleCnt;
 	DrawCircle(Image, posCircle);
-	count++;
 	return true;
 }
 //从图中识别直线（实际未使用）
@@ -416,57 +427,72 @@ bool TestCalibration()
 	{
 
 		std::cin.get();
-		res = m_pKinect->GetKinectImage(m_pGraph);
-		if (res != GT_RES_OK)
+		CameraSpacePoint CameraposSum;
+		CameraposSum.X = 0;
+		CameraposSum.Y = 0;
+		CameraposSum.Z = 0;
+		for (size_t j = 0; j < 5; j++)													//获取多幅图片5，减少彩色图片和深度图片的误差
 		{
-			std::cout << "Get image error\n" << std::endl;
-			continue;
-		}
-		if (!GetCirclePos(*(m_pGraph->ColorImg), pos))
-		{
-			std::cout << "get image center failed" << std::endl;
-			continue;
-		}
-		std::vector<ColorSpacePoint> v_Colorpos;
-		std::vector<CameraSpacePoint> v_Camerapos;
-		for (size_t i = 0; i < 5; i++)
-		{
-			for (size_t j = 0; j < 5; j++)
+			res = m_pKinect->GetKinectImage(m_pGraph);
+			if (res != GT_RES_OK)
 			{
-				ColorSpacePoint pos_tmp;
-				pos_tmp.X = pos.x + i - 2;
-				pos_tmp.Y = pos.y + j - 2;
-				v_Colorpos.push_back(pos_tmp);
+				std::cout << "Get image error\n" << std::endl;
+				continue;
 			}
-		}
-		res = m_pKinect->Colorpos2Camerapos(v_Colorpos, v_Camerapos);
-		if (res != GT_RES_OK)
-		{
-			std::cout << "Coordiante color to camera failed with error:" << res << std::endl;
-			continue;
-		}
-		CameraSpacePoint Camerapos;
-		Camerapos.X = 0;
-		Camerapos.Y = 0;
-		Camerapos.Z = 0;
-		int sizeCnt = 0;
-		for (size_t i = 0; i < v_Camerapos.size(); i++)
-		{
-			if (IsInLimit(v_Camerapos[i]))
+			if (!GetCirclePos(*(m_pGraph->ColorImg), pos))
 			{
-				Camerapos.X += v_Camerapos[i].X;
-				Camerapos.Y += v_Camerapos[i].Y;
-				Camerapos.Z += v_Camerapos[i].Z;
-				sizeCnt++;
+				std::cout << "get image center failed" << std::endl;
+				continue;
 			}
-		}
-		Camerapos.X /= sizeCnt;
-		Camerapos.Y /= sizeCnt;
-		Camerapos.Z /= sizeCnt;
+			std::cout << "Colorpos" << pos.x << " " << pos.y << " " << pos.z << std::endl;
 
-		fp << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
-		std::cout << sizeCnt << "\n" << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\t";
-		fp << "\n";
+			std::vector<ColorSpacePoint> v_Colorpos;
+			std::vector<CameraSpacePoint> v_Camerapos;
+			for (size_t i = 0; i < 5; i++)
+			{
+				for (size_t j = 0; j < 5; j++)
+				{
+					ColorSpacePoint pos_tmp;
+					pos_tmp.X = pos.x + i - 2;
+					pos_tmp.Y = pos.y + j - 2;
+					v_Colorpos.push_back(pos_tmp);
+				}
+			}
+			res = m_pKinect->Colorpos2Camerapos(v_Colorpos, v_Camerapos);
+			if (res != GT_RES_OK)
+			{
+				std::cout << "Coordiante color to camera failed with error:" << res << std::endl;
+				continue;
+			}
+			CameraSpacePoint Camerapos;
+			Camerapos.X = 0;
+			Camerapos.Y = 0;
+			Camerapos.Z = 0;
+			int sizeCnt = 0;
+			for (size_t i = 0; i < v_Camerapos.size(); i++)
+			{
+				if (IsInLimit(v_Camerapos[i]))
+				{
+					Camerapos.X += v_Camerapos[i].X;
+					Camerapos.Y += v_Camerapos[i].Y;
+					Camerapos.Z += v_Camerapos[i].Z;
+					sizeCnt++;
+				}
+			}
+			Camerapos.X /= sizeCnt;
+			Camerapos.Y /= sizeCnt;
+			Camerapos.Z /= sizeCnt;
+			CameraposSum.X += Camerapos.X;
+			CameraposSum.Y += Camerapos.Y;
+			CameraposSum.Z += Camerapos.Z; 
+			std::cout << sizeCnt << "\t" << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\n";
+		}
+		CameraposSum.X /= 5;
+		CameraposSum.Y /= 5;
+		CameraposSum.Z /= 5;
+		fp << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
+		std::cout << 5 << "\n" << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
+
 
 		std::cin.get();
 
@@ -578,7 +604,7 @@ bool TestVerifyTransMat()
 	}
 	return true;
 }
-
+//测试UR5本身的精度
 bool TestErrorUR5(int Num)
 {
 	m_pUR5 = new UR5SocketCom;
