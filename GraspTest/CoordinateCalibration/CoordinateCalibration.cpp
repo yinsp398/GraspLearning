@@ -10,7 +10,7 @@
 #include <utils.h>
 #include <fstream>
 
-#define _DEBUG_PRINT_
+//#define _DEBUG_PRINT_
 #define _MAX_RADIUS_		120
 #define _DETAL_				5
 
@@ -219,7 +219,9 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 		cv::GaussianBlur(Image, ImageGau, cv::Size(7, 7), 2, 2);
 		std::vector<cv::Vec3f> circles;
 		HoughCircles(ImageGau, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 150, i, i+_DETAL_);
+#ifdef _DEBUG_PRINT_
 		std::cout << i << "~" << i + _DETAL_ << ":";
+#endif
 		if (circles.size() == 0)
 		{
 #ifdef _DEBUG_PRINT_
@@ -444,7 +446,7 @@ bool TestCalibration()
 				std::cout << "get image center failed" << std::endl;
 				continue;
 			}
-			std::cout << "Colorpos" << pos.x << " " << pos.y << " " << pos.z << std::endl;
+			std::cout << "Colorpos: " << pos.x << " " << pos.y << " " << pos.z << " ";
 
 			std::vector<ColorSpacePoint> v_Colorpos;
 			std::vector<CameraSpacePoint> v_Camerapos;
@@ -666,7 +668,7 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-
+	TestCalibration();
 	
 
     return 0;
