@@ -226,8 +226,8 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 		{
 #ifdef _DEBUG_PRINT_
 			std::cout << "Get not any circle" << std::endl;
-			continue;
 #endif
+			continue;
 		}
 		else if (circles.size() == 1)
 		{
@@ -265,6 +265,11 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 #endif
 		sum = sum + pos;
 		CircleCnt++;
+	}
+	if (CircleCnt == 0)
+	{
+		std::cout << "Get not any circle!" << std::endl;
+		return false;
 	}
 	posCircle = sum / CircleCnt;
 	DrawCircle(Image, posCircle);
