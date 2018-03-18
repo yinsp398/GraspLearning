@@ -1,0 +1,9 @@
+﻿  CaffeNetTrain.cpp
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\google\protobuf\message_lite.h(247): warning C4267: “return”: 从“size_t”转换到“int”，可能丢失数据
+c:\users\yinsp\desktop\grasplearning\grasptest\caffe_include\caffe\util\io.hpp(53): warning C4244: “参数”: 从“uint64_t”转换到“int”，可能丢失数据
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\mat.hpp(1965): warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\persistence.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+c:\users\yinsp\.caffe\dependencies\libraries_v140_x64_py27_1.1.0\libraries\include\opencv2\core\utility.hpp : warning C4819: 该文件包含不能在当前代码页(936)中表示的字符。请将该文件保存为 Unicode 格式以防止数据丢失
+  CaffeNetTrain.vcxproj -> C:\Users\yinsp\Desktop\GraspLearning\GraspTest\x64\Debug\CaffeNetTrain.exe
+  CaffeNetTrain.vcxproj -> C:\Users\yinsp\Desktop\GraspLearning\GraspTest\x64\Debug\CaffeNetTrain.pdb (Partial PDB)
