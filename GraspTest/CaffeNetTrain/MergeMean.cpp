@@ -1,3 +1,4 @@
+#include "MergeMean.h"
 #include <stdint.h>
 #include <algorithm>
 #include <string>
