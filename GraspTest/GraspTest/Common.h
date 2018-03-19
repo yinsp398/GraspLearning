@@ -46,9 +46,9 @@
 #define		ROBOTSPACELEFT					456							//左边界
 #define		ROBOTSPACERIGHT					456							//右边界
 
-#define		COLORGRAPHWIDE					60							//局部彩色图像宽度
+#define		COLORGRAPHWIDTH					60							//局部彩色图像宽度
 #define		COLORGRAPHHEIGHT				60							//局部彩色图像高度
-#define		DEPTHGRAPHWIDE					20							//局部深度图像宽度
+#define		DEPTHGRAPHWIDTH					20							//局部深度图像宽度
 #define		DEPTHGRAPHHEIGHT				20							//局部深度图像高度
 
 

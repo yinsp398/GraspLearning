@@ -425,3 +425,20 @@ GT_RES	KinectDriver::Colorpos2Depthpos(const std::vector<ColorSpacePoint> Colorp
 	}
 	return GT_RES_OK;
 }
+
+GT_RES	KinectDriver::Colorpos2Depthpos(const float Xc, const float Yc, float &Xd, float &Yd)
+{
+	GT_RES res;
+	ColorSpacePoint Colorpos;
+	DepthSpacePoint Depthpos;
+	Colorpos.X = Xc;
+	Colorpos.Y = Yc;
+	res = Colorpos2Depthpos(Colorpos, Depthpos);
+	if (res != GT_RES_OK)
+	{
+		return res;
+	}
+	Xd = Depthpos.X;
+	Yd = Depthpos.Y;
+	return GT_RES_OK;
+}

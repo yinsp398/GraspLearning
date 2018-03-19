@@ -107,47 +107,6 @@ GT_RES	NN::NNRun()
 	return GT_RES_OK;
 }
 
-//Get graph by the center of pose
-GT_RES	NN::GetSubImage(GraspPose *pos, cv::Mat *ImgIn, cv::Mat *ImgOut)
-{
-	if (pos == NULL || ImgIn == NULL || ImgOut == NULL)
-	{
-		printf("The pointer to pos or image is NULL.\n");
-		return GT_RES_ERROR;
-	}
-	//确保二者尺寸一致
-	if (ImgIn->type() != ImgOut->type())
-	{
-		printf("The size or type of ImgIn and ImgOut are not consistent.\n");
-		return GT_RES_ERROR;
-	}
-	//边界检查
-	if (pos->x > COLORSPACERIGHT || pos->x < COLORSPACELEFT)
-	{
-		printf("The center position x is out of the boundary.\n");
-		return GT_RES_ERROR;
-	}
-	else if (pos->y > COLORSPACEDOWN || pos->y < COLORSPACEUP)
-	{
-		printf("The center position y is out of the boundary.\n");
-		return GT_RES_ERROR;		
-	}
-	else if (pos->theta<0 || pos->theta>PI)
-	{
-		printf("The center position theta is out of the boundary.\n");
-		return GT_RES_ERROR;
-	}
-
-	cv::Point2f Center(pos->x, pos->y);
-	cv::Mat RotationMat = cv::getRotationMatrix2D(Center, pos->theta, COLORSCALE);
-	cv::Mat NewImg(ImgIn->rows, ImgIn->cols, ImgIn->type(), cv::Scalar(0, 0, 0));
-	cv::warpAffine(*ImgIn, NewImg, RotationMat, cv::Size(ImgIn->cols, ImgIn->rows));
-	cv::Rect rect(pos->x - COLORGRAPHWIDE / 2, pos->y - COLORGRAPHHEIGHT, COLORGRAPHWIDE, COLORGRAPHHEIGHT);
-	cv::Mat SubImg = NewImg(rect);
-	SubImg.copyTo(*ImgOut);
-	return GT_RES_OK;
-}
-
 //Get random pose one by one (algorithm 1)
 GT_RES	NN::GetRandomPose(GraspPose * pos)
 {
@@ -211,4 +170,121 @@ GT_RES	NN::GetPose(Pose3D *pos)
 		printf("Have not initialized the NN\n");
 		return GT_RES_ERROR;
 	}
+}
+
+//Get graph by the center of pose
+GT_RES NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics *GraphOut, const bool flip, const bool contrast, const float contrast_scale)
+{
+	if (pos == NULL || GraphIn == NULL || GraphOut == NULL)
+	{
+		printf("The pointer to pos or image is NULL.\n");
+		return GT_RES_ERROR;
+	}
+	//确保二者尺寸一致
+	if (GraphIn->ColorImg->size.p[0] != COLORWIDTH || GraphIn->ColorImg->size.p[1] != COLORHEIGHT || GraphIn->DepthImg->size.p[0] != DEPTHWIDTH || GraphIn->DepthImg->size.p[1] != DEPTHHEIGHT)
+	{
+		printf("The size of GraphIn is not right.\n");
+		return GT_RES_ERROR;
+	}
+	if (GraphOut->ColorImg->size.p[0] != COLORGRAPHWIDTH || GraphIn->ColorImg->size.p[1] != COLORGRAPHHEIGHT || GraphIn->DepthImg->size.p[0] != DEPTHGRAPHWIDTH || GraphIn->DepthImg->size.p[1] != DEPTHGRAPHHEIGHT)
+	{
+		printf("The size of GraphOut is not right.\n");
+		return GT_RES_ERROR;
+	}
+	if (GraphIn->ColorImg->type() != GraphOut->ColorImg->type() || GraphIn->DepthImg->type() != GraphOut->DepthImg->type())
+	{
+		printf("The type of GraphIn and GraphOut is not consistent.\n");
+		return GT_RES_ERROR;
+	}
+	//边界检查
+	if (pos->x > COLORSPACERIGHT || pos->x < COLORSPACELEFT)
+	{
+		printf("The center position x is out of the boundary.\n");
+		return GT_RES_ERROR;
+	}
+	else if (pos->y > COLORSPACEDOWN || pos->y < COLORSPACEUP)
+	{
+		printf("The center position y is out of the boundary.\n");
+		return GT_RES_ERROR;
+	}
+	else if (pos->theta<0 || pos->theta>PI)
+	{
+		printf("The center position theta is out of the boundary.\n");
+		return GT_RES_ERROR;
+	}
+
+	cv::Point2f Center(pos->x, pos->y);
+	cv::Mat *pMat1 = GraphIn->ColorImg;
+	cv::Mat *pMat2 = GraphIn->DepthImg;
+	if (flip)
+	{
+		cv::Mat tmpMat1;
+		cv::Mat tmpMat2;
+		cv::flip(*pMat1, tmpMat1, 0);
+		cv::flip(*pMat2, tmpMat2, 0);
+		pMat1 = &tmpMat1;
+		pMat2 = &tmpMat2;
+	}
+
+	if (fabs(pos->theta) < 1e-5)
+	{
+		cv::Mat tmpMat1;
+		cv::Mat tmpMat2;
+		cv::Mat RotationMat1 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
+		cv::warpAffine(*pMat1, tmpMat1, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
+		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
+		cv::warpAffine(*pMat2, tmpMat2, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
+		pMat1 = &tmpMat1;
+		pMat2 = &tmpMat2;
+	}
+
+	float Dx, Dy;
+	GT_RES res = m_pKinect->Colorpos2Depthpos(pos->x, pos->y, Dx, Dy);
+	if (res != GT_RES_OK)
+	{
+		printf("Colorpos convert to Depthpos failed with error:%02x.\n", res);
+		return res;
+	}
+
+	if (contrast)
+	{
+		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
+		cv::Mat SubImg1 = (*pMat1)(rect1);
+		pMat1 = &SubImg1;
+		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+		cv::Mat SubImg2 = (*pMat2)(rect2);
+		pMat2 = &SubImg2;
+
+		size_t width1 = pMat1->size.p[0];
+		size_t height1 = pMat1->size.p[1];
+		
+		for (size_t i = 0; i < height1; i++)
+		{
+			for (size_t j = 0; j < width1; j++)
+			{
+				GraphOut->ColorImg->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat1->at<uchar>(i, j)*contrast_scale);
+			}
+		}
+
+		size_t width2 = pMat2->size.p[0];
+		size_t height2 = pMat2->size.p[1];
+		
+		for (size_t i = 0; i < height2; i++)
+		{
+			for (size_t j = 0; j < width2; j++)
+			{
+				GraphOut->DepthImg->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat2->at<uchar>(i, j)*contrast_scale);
+			}
+		}
+	}
+	else
+	{
+		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
+		cv::Mat SubImg1 = (*pMat1)(rect1);
+		SubImg1.copyTo(*(GraphOut->ColorImg));
+		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+		cv::Mat SubImg2 = (*pMat2)(rect2);
+		SubImg2.copyTo(*(GraphOut->DepthImg));
+	}
+	return GT_RES_OK;
 }
