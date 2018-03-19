@@ -15,7 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CaffeNetTrain.cpp">
+    <ClCompile Include="MergeMean.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ConvertDB.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

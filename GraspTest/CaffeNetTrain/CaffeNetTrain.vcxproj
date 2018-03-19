@@ -116,7 +116,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CaffeNetTrain.cpp" />
+    <ClCompile Include="ConvertDB.cpp" />
+    <ClCompile Include="MergeMean.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
