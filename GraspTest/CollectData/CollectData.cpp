@@ -4,6 +4,7 @@
 #include <string>
 #include <stdio.h>
 #include <iostream>
+#include <windows.h>
 
 bool GetBYTEformat(cv::Mat *DepthImg, cv::Mat *OutImg)
 {
@@ -39,16 +40,18 @@ int main()
 	NN* NNet = new NN("", "", "", Kinect);
 	Graphics *GraphIn, *GraphOut;
 	GraphIn = new Graphics;
-	GraphIn->ColorImg = new cv::Mat(COLORWIDTH, COLORHEIGHT, COLORFORMAT);
-	GraphIn->DepthImg = new cv::Mat(DEPTHWIDTH, DEPTHHEIGHT, COLORFORMAT);
+	GraphIn->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	GraphIn->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	GraphOut = new Graphics;
-	GraphOut->ColorImg = new cv::Mat(COLORGRAPHWIDTH, COLORGRAPHHEIGHT, COLORFORMAT);
-	GraphOut->DepthImg = new cv::Mat(DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT, COLORFORMAT);
-	cv::Mat * pMat = new cv::Mat(DEPTHWIDTH, DEPTHHEIGHT, DEPTHFORMAT);
+	GraphOut->ColorImg = new cv::Mat(COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORFORMAT);
+	GraphOut->DepthImg = new cv::Mat(DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, COLORFORMAT);
+	cv::Mat * pMat = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	Sleep(5000);
 	while (1)
 	{
-		std::cin.get();
-
+		if (std::cin.get() == ' ')
+			break;
+		
 		cv::Mat * tmp;
 		tmp = GraphIn->DepthImg;
 		GraphIn->DepthImg = pMat;
@@ -77,7 +80,7 @@ int main()
 			for (size_t j = 0; j < 10; j++)
 			{												//随机获取十个不同角度的图片
 				pos.theta = rand() / double(RAND_MAX) * PI;
-				for (size_t k = 0; k < 1; k++)
+				for (size_t k = 0; k < 2; k++)
 				{											//是否翻转
 					for (size_t p = 0; p < 4; p++)
 					{										//不同的对比度
@@ -87,8 +90,11 @@ int main()
 							printf("Get subimage failed!\n");
 							continue;
 						}
-						cv::imwrite("..\\Image\\Color" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->ColorImg));
-						cv::imwrite("..\\Image\\Depth" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->DepthImg));
+						cv::imwrite("..\\ImageSet\\Color" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->ColorImg));
+						std::cout << "..\\ImageSet\\Color" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
+						cv::imwrite("..\\ImageSet\\Depth" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->DepthImg));
+						std::cout << "..\\ImageSet\\Depth" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
+						ImgCnt++;
 					}
 				}
 			}

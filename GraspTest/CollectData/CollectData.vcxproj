@@ -125,11 +125,6 @@
     <ClCompile Include="CollectData.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GraspTest\GraspTest.vcxproj">
-      <Project>{9867e57b-87a0-4ad4-b256-78c1ffa35371}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\GraspTest\Classification.h" />
     <ClInclude Include="..\GraspTest\KinectDriver.h" />
     <ClInclude Include="..\GraspTest\NN.h" />

@@ -209,12 +209,12 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		return GT_RES_ERROR;
 	}
 	//确保二者尺寸一致
-	if (GraphIn->ColorImg->size.p[0] != COLORWIDTH || GraphIn->ColorImg->size.p[1] != COLORHEIGHT || GraphIn->DepthImg->size.p[0] != DEPTHWIDTH || GraphIn->DepthImg->size.p[1] != DEPTHHEIGHT)
+	if (GraphIn->ColorImg->rows != COLORHEIGHT || GraphIn->ColorImg->cols != COLORWIDTH || GraphIn->DepthImg->rows != DEPTHHEIGHT || GraphIn->DepthImg->cols != DEPTHWIDTH)
 	{
 		printf("The size of GraphIn is not right.\n");
 		return GT_RES_ERROR;
 	}
-	if (GraphOut->ColorImg->size.p[0] != COLORGRAPHWIDTH || GraphIn->ColorImg->size.p[1] != COLORGRAPHHEIGHT || GraphIn->DepthImg->size.p[0] != DEPTHGRAPHWIDTH || GraphIn->DepthImg->size.p[1] != DEPTHGRAPHHEIGHT)
+	if (GraphOut->ColorImg->rows != COLORGRAPHHEIGHT || GraphOut->ColorImg->cols != COLORGRAPHWIDTH || GraphOut->DepthImg->rows != DEPTHGRAPHHEIGHT || GraphOut->DepthImg->cols != DEPTHGRAPHWIDTH)
 	{
 		printf("The size of GraphOut is not right.\n");
 		return GT_RES_ERROR;
@@ -244,26 +244,31 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	cv::Point2f Center(pos->x, pos->y);
 	cv::Mat *pMat1 = GraphIn->ColorImg;
 	cv::Mat *pMat2 = GraphIn->DepthImg;
+	cv::Mat *pMat = NULL;
 	if (flip)
 	{
-		cv::Mat tmpMat1;
-		cv::Mat tmpMat2;
-		cv::flip(*pMat1, tmpMat1, 0);
-		cv::flip(*pMat2, tmpMat2, 0);
-		pMat1 = &tmpMat1;
-		pMat2 = &tmpMat2;
+		pMat = new cv::Mat;
+		cv::flip(*pMat1, *pMat, 0);
+		pMat1 = pMat;
+		pMat = new cv::Mat;
+		cv::flip(*pMat2, *pMat, 0);
+		pMat2 = pMat;
 	}
 
-	if (fabs(pos->theta) < 1e-5)
+	if (fabs(pos->theta) > 1e-5)
 	{
-		cv::Mat tmpMat1;
-		cv::Mat tmpMat2;
+		pMat = new cv::Mat;
 		cv::Mat RotationMat1 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
-		cv::warpAffine(*pMat1, tmpMat1, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
+		cv::warpAffine(*pMat1, *pMat, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
+		if (flip)
+			delete pMat1;
+		pMat1 = pMat;
+		pMat = new cv::Mat;
 		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
-		cv::warpAffine(*pMat2, tmpMat2, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
-		pMat1 = &tmpMat1;
-		pMat2 = &tmpMat2;
+		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
+		if (flip)
+			delete pMat2;
+		pMat2 = pMat;
 	}
 
 	float Dx, Dy;
@@ -276,15 +281,19 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 
 	if (contrast)
 	{
-		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
+		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT / 2, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
 		cv::Mat SubImg1 = (*pMat1)(rect1);
+		if (pMat)
+			delete pMat1;
 		pMat1 = &SubImg1;
-		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT / 2, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
 		cv::Mat SubImg2 = (*pMat2)(rect2);
+		if (pMat)
+			delete pMat2;
 		pMat2 = &SubImg2;
 
-		size_t width1 = pMat1->size.p[0];
-		size_t height1 = pMat1->size.p[1];
+		size_t width1 = pMat1->cols;
+		size_t height1 = pMat1->rows;
 		
 		for (size_t i = 0; i < height1; i++)
 		{
@@ -294,8 +303,8 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 			}
 		}
 
-		size_t width2 = pMat2->size.p[0];
-		size_t height2 = pMat2->size.p[1];
+		size_t width2 = pMat2->cols;
+		size_t height2 = pMat2->rows;
 		
 		for (size_t i = 0; i < height2; i++)
 		{
