@@ -64,6 +64,8 @@ int main()
 		GraphIn->DepthImg = pMat;
 		pMat = tmp;
 
+		cv::imwrite("..\\ImageSet\\ColorImg.jpg", *(GraphIn->ColorImg));
+		cv::imwrite("..\\ImageSet\\DepthImg.jpg", *(GraphIn->DepthImg));
 		if (res != GT_RES_OK)
 		{
 			printf("Getting Kinect image failed with error:%02x\n", res);
@@ -92,15 +94,19 @@ int main()
 							printf("Get subimage failed!\n");
 							continue;
 						}
-						cv::imwrite("..\\ImageSet\\Color" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->ColorImg));
-						std::cout << "..\\ImageSet\\Color" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
-						cv::imwrite("..\\ImageSet\\Depth" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->DepthImg));
-						std::cout << "..\\ImageSet\\Depth" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
+						cv::imwrite("..\\ImageSet\\Color\\" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->ColorImg));
+						std::cout << "..\\ImageSet\\Color\\" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
+						cv::imwrite("..\\ImageSet\\Depth\\" + Int2Str(ImgCnt, 5) + ".jpg", *(GraphOut->DepthImg));
+						std::cout << "..\\ImageSet\\Depth\\" + Int2Str(ImgCnt, 5) + ".jpg" << std::endl;
 						ImgCnt++;
 					}
 				}
 			}
 		}
+
+		cv::imwrite("..\\ImageSet\\ColorImg.jpg", *(GraphIn->ColorImg));
+		cv::imwrite("..\\ImageSet\\DepthImg.jpg", *(GraphIn->DepthImg));
+
 	}
 
 	return 0;

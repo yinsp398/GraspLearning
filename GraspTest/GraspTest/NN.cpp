@@ -239,26 +239,8 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	{
 		printf("The center position theta is out of the boundary.\n");
 		return GT_RES_ERROR;
-	}
-
-	cv::Point2f Center(pos->x, pos->y);
-	cv::Mat *pMat1 = GraphIn->ColorImg;
-	cv::Mat *pMat2 = GraphIn->DepthImg;
-	cv::Mat *pMat = NULL;
-
-	if (fabs(pos->theta) > 1e-5)
-	{
-		pMat = new cv::Mat;
-		cv::Mat RotationMat1 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
-		cv::warpAffine(*pMat1, *pMat, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
-		pMat1 = pMat;
-
-		pMat = new cv::Mat;
-		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
-		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
-		pMat2 = pMat;
-	}
-
+	}	
+	
 	float Dx, Dy;
 	GT_RES res = m_pKinect->Colorpos2Depthpos(pos->x, pos->y, Dx, Dy);
 	if (res != GT_RES_OK)
@@ -266,17 +248,43 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		printf("Colorpos convert to Depthpos failed with error:%02x.\n", res);
 		return res;
 	}
+	else if (Dx<0 || Dx>=DEPTHWIDTH || Dy<0 || Dy>=DEPTHHEIGHT)
+	{
+		printf("depth image index is out of range.\n");
+		return GT_RES_ERROR;
+	}
+
+	cv::Point2f Center1(pos->x, pos->y);
+	cv::Point2f Center2(Dx, Dy);
+	cv::Mat *pMat1 = GraphIn->ColorImg;
+	cv::Mat *pMat2 = GraphIn->DepthImg;
+	cv::Mat *pMat = NULL;
+
+	if (fabs(pos->theta) > 1e-5)
+	{
+		pMat = new cv::Mat;
+		cv::Mat RotationMat1 = cv::getRotationMatrix2D(Center1, pos->theta / PI * 180, COLORSCALE);
+		cv::warpAffine(*pMat1, *pMat, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
+		pMat1 = pMat;
+
+		pMat = new cv::Mat;
+		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center2, pos->theta / PI * 180, COLORSCALE);
+		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
+		pMat2 = pMat;
+	}
+
+
 
 	pMat = new cv::Mat;
-	cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT / 2, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
-	*pMat = (*pMat1)(rect1);
+	cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2.0, pos->y - COLORGRAPHHEIGHT / 2.0, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
+	(*pMat1)(rect1).copyTo(*pMat);
 	if (fabs(pos->theta) > 1e-5)
 		delete pMat1;
 	pMat1 = pMat;
 
 	pMat = new cv::Mat;
-	cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT / 2, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
-	*pMat = (*pMat2)(rect2);
+	cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2.0, Dy - DEPTHGRAPHHEIGHT / 2.0, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+	(*pMat2)(rect2).copyTo(*pMat);
 	if (fabs(pos->theta) > 1e-5)
 		delete pMat2;
 	pMat2 = pMat;
@@ -285,7 +293,6 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	{
 		size_t width1 = pMat1->cols;
 		size_t height1 = pMat1->rows;
-		
 		for (size_t i = 0; i < height1; i++)
 		{
 			for (size_t j = 0; j < width1; j++)
@@ -296,7 +303,6 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 
 		size_t width2 = pMat2->cols;
 		size_t height2 = pMat2->rows;
-		
 		for (size_t i = 0; i < height2; i++)
 		{
 			for (size_t j = 0; j < width2; j++)
@@ -316,6 +322,7 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		pMat1->copyTo(*(GraphOut->ColorImg));
 		pMat2->copyTo(*(GraphOut->DepthImg));
 	}
-
+	delete pMat1;
+	delete pMat2;
 	return GT_RES_OK;
 }
