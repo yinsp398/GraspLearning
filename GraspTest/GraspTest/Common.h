@@ -36,20 +36,15 @@
 #define		TRAINEDFILE						"test13"					//训练好的参数文件
 #define		MEANFILE						"test2"						//平均值文件
 
-#define		COLORSPACEUP					123							//彩色空间（二维）约束的上边界
-#define		COLORSPACEDOWN					456							//下边界
-#define		COLORSPACELEFT					456							//左边界
-#define		COLORSPACERIGHT					456							//右边界
+#define		COLORSPACEUP					470							//彩色空间（二维）约束的上边界
+#define		COLORSPACEDOWN					820							//下边界
+#define		COLORSPACELEFT					790							//左边界
+#define		COLORSPACERIGHT					1140						//右边界
 
-#define		ROBOTSPACEUP					123							//机器人空间（二维）约束的上边界
-#define		ROBOTSPACEDOWN					456							//下边界
-#define		ROBOTSPACELEFT					456							//左边界
-#define		ROBOTSPACERIGHT					456							//右边界
-
-#define		COLORGRAPHWIDTH					60							//局部彩色图像宽度
-#define		COLORGRAPHHEIGHT				60							//局部彩色图像高度
-#define		DEPTHGRAPHWIDTH					20							//局部深度图像宽度
-#define		DEPTHGRAPHHEIGHT				20							//局部深度图像高度
+#define		COLORGRAPHWIDTH					100							//局部彩色图像宽度
+#define		COLORGRAPHHEIGHT				100							//局部彩色图像高度
+#define		DEPTHGRAPHWIDTH					50							//局部深度图像宽度
+#define		DEPTHGRAPHHEIGHT				50							//局部深度图像高度
 
 
 #define		BATCHSIZE						30							//一组数据个数
