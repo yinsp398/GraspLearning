@@ -56,6 +56,7 @@
 #define		COLORSCALE						1							//彩色图像的放大倍数
 
 #define		IMAGEPATH						"../dataset/picture/Image"	//用于存储图像数据的路径
+#define		DEPTHPATH						"../dataset/picture/Depth"	//用于存储深度数据的路径
 #define		PREDICTPATH						"../dataset/Predict.txt"	//预测每次抓取的成功率的文件路径
 #define		RESULTPATH						"../dataset/Result.txt"		//每次抓取结果的文件路径
 

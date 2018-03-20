@@ -87,7 +87,7 @@ void Classifier::SetMean(const string& mean_file) {
 	mean_ = cv::Mat(input_geometry_, mean.type(), channel_mean);
 }
 
-std::vector<float> Classifier::Predict(const cv::Mat& img) {
+std::vector<float> Classifier::Predict(const cv::Mat& colorimg, const cv::Mat& depthimg) {
 	caffe::Blob<float>* input_layer = net_->input_blobs()[0];
 	input_layer->Reshape(1, num_channels_,
 		input_geometry_.height, input_geometry_.width);
@@ -97,7 +97,7 @@ std::vector<float> Classifier::Predict(const cv::Mat& img) {
 	std::vector<cv::Mat> input_channels;
 	WrapInputLayer(&input_channels);
 
-	Preprocess(img, &input_channels);
+	Preprocess(colorimg, &input_channels);
 
 	net_->Forward();
 

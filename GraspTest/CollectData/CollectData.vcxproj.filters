@@ -15,30 +15,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MergeMean.cpp">
+    <ClCompile Include="CollectData.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="ConvertDB.cpp">
+    <ClCompile Include="..\GraspTest\KinectDriver.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="CaffeNetTrain.cpp">
+    <ClCompile Include="..\GraspTest\NN.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GraspTest\Classification.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="..\GraspTest\KinectDriver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="ConvertDB.h">
+    <ClInclude Include="..\GraspTest\NN.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="MergeMean.h">
+    <ClInclude Include="..\GraspTest\Classification.h">
       <Filter>头文件</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="CaffeNetTrain.rc">
-      <Filter>资源文件</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>

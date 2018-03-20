@@ -20,7 +20,6 @@ NN::NN(	const std::string & model_file,
 	srand((unsigned)time(NULL));											//initialize the rand seed by time stamp
 	m_pUpdateTime = new time_t;
 	*m_pUpdateTime = time(NULL);
-	ImageCnt = 0;
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
@@ -57,8 +56,17 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 	}
 	// deeply copy from graph to m_pGraph
 	memcpy(m_pGraph->ColorImg, graph->ColorImg, sizeof(graph->ColorImg));
-	memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
-
+	//memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
+	//convert depth image from 16bit to 8bit , 0~255 
+	int nWidth = graph->DepthImg->size.p[1];
+	int nHeight = graph->DepthImg->size.p[0];
+	for (size_t i = 0; i < nHeight; i++)
+	{
+		for (size_t j = 0; j < nWidth; j++)
+		{
+			m_pGraph->DepthImg->at<uchar>(i, j) = (uchar)(graph->DepthImg->at<UINT16>(i, j) % 256);
+		}
+	}
 	return GT_RES_OK;
 }
 
@@ -79,22 +87,29 @@ GT_RES	NN::NNRun()
 	}
 	//这里先采用最简单直接的方式，直接暴力找，之后调通了再修改优化这里
 	//直接使用彩色图像，之后再考虑深度图像
-	cv::Mat *pImage = m_pGraph->ColorImg;
+	Graphics * graph = new Graphics;
+	graph->ColorImg = new cv::Mat(COLORHEIGHT,COLORWIDTH,COLORFORMAT);
+	graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	GraspPose pos;
 	for (int i = 0; i < 50; i++)
 	{
 		if ((res = GetRandomPose(&pos)) != GT_RES_OK)
 		{
 			printf("Get random pose failed with error: %02x.\n", res);
+			delete graph->ColorImg;
+			delete graph->DepthImg;
+			delete graph;
 			return res;
 		}
-		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, pImage->type(), cv::Scalar(0, 0, 0));
-		if ((res = GetSubImage(&pos, pImage, &SubImage)) != GT_RES_OK)
+		if ((res = GetSubImage(&pos, m_pGraph, graph,false,false,1)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
+			delete graph->ColorImg;
+			delete graph->DepthImg;
+			delete graph;
 			return res;
 		}
-		std::vector<float> Vec_Tmp = m_pClassifier->Predict(SubImage);
+		std::vector<float> Vec_Tmp = m_pClassifier->Predict(*(graph->ColorImg), *(graph->DepthImg));
 		std::pair<GraspPose, float> Pair_tmp = std::make_pair(pos, Vec_Tmp[0]);
 		m_pposes->push_back(Pair_tmp);
 		if (m_ppos->second < Vec_Tmp[0])
@@ -103,7 +118,9 @@ GT_RES	NN::NNRun()
 			m_ppos->first = pos;
 		}
 	}
-
+	delete graph->ColorImg;
+	delete graph->DepthImg;
+	delete graph;
 	return GT_RES_OK;
 }
 
@@ -131,38 +148,49 @@ GT_RES	NN::GetRandomPoses(std::vector<GraspPose> *vec_pos)
 }
 
 //get the optimal Pose
-GT_RES	NN::GetPose(Pose3D *pos)
+GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 {
 	GT_RES res;
 	if (m_ppos)
 	{
+		Graphics * graph = new Graphics;
+		graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+		graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 		//save the subimage about the m_ppos to file
-		cv::Mat* pImage =m_pGraph->ColorImg;
-		cv::Mat SubImage(COLORGRAPHHEIGHT, COLORGRAPHWIDE, pImage->type(), cv::Scalar(0, 0, 0));
-		if ((res = GetSubImage(&m_ppos->first, pImage, &SubImage)) != GT_RES_OK)
+		if ((res = GetSubImage(&(m_ppos->first), m_pGraph, graph, false, false, 1)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
+			delete graph->ColorImg;
+			delete graph->DepthImg;
+			delete graph;
 			return res;
 		}
-		string FileName;
-		FileName = IMAGEPATH;
+		string FileNameColor,FileNameDepth;
+		FileNameColor = IMAGEPATH;
+		FileNameDepth = DEPTHPATH;
 		std::stringstream ss;
 		string str_tmp;
-		ss << ImageCnt;
+		ss << ImgCnt;
 		ss >> str_tmp;
-		FileName += str_tmp;
-		FileName += ".jpg";
-		cv::imwrite(FileName,SubImage);
+		if (5 > str_tmp.size())
+		{
+			str_tmp.insert(0, 5 - str_tmp.size(), '0');
+		}
+		FileNameColor += str_tmp;
+		FileNameColor += ".jpg";
+		FileNameDepth += str_tmp;
+		FileNameDepth += ".jpg";
+		cv::imwrite(FileNameColor, *(graph->ColorImg));
+		cv::imwrite(FileNameDepth, *(graph->DepthImg));
 		
 		//save the predicted possibility to file
 		std::ofstream out;
-		out.open(PREDICTPATH, std::ios::out);
-		out << m_ppos->second<<std::endl;
+		out.open(PREDICTPATH, std::ios::app);
+		out << str_tmp << " " << m_ppos->second << std::endl;
 		out.close();
 
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
 		m_pposes->clear();
-		ImageCnt++;
 		return GT_RES_OK;
 	}
 	else
@@ -173,7 +201,7 @@ GT_RES	NN::GetPose(Pose3D *pos)
 }
 
 //Get graph by the center of pose
-GT_RES NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics *GraphOut, const bool flip, const bool contrast, const float contrast_scale)
+GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics *GraphOut, const bool flip, const bool contrast, const float contrast_scale)
 {
 	if (pos == NULL || GraphIn == NULL || GraphOut == NULL)
 	{

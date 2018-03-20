@@ -22,9 +22,7 @@ private:
 	time_t										*m_pUpdateTime;
 	CoordinateMap								*m_pCoordinateMap;
 	KinectDriver								*m_pKinect;
-	unsigned int								ImageCnt;
 	GT_RES										UpdateParam(std::string trained_file, std::string mean_file);
-	GT_RES										GetRandomPose(GraspPose * pos);
 	GT_RES										GetRandomPoses(std::vector<GraspPose> *vec_pos);
 
 public:
@@ -33,5 +31,6 @@ public:
 	GT_RES										GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics *GraphOut, const bool flip, const bool contrast, const float contrast_scale);
 	GT_RES										UpdateGraphics(Graphics * graph);
 	GT_RES										NNRun();
-	GT_RES										GetPose(Pose3D *pos);
+	GT_RES										GetPose(Pose3D *pos, const unsigned int ImgCnt);
+	GT_RES										GetRandomPose(GraspPose * pos);
 };

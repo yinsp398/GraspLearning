@@ -7,6 +7,7 @@
 #include "KinectDriver.h"
 #include "utils.h"
 #include "Common.h"
+#include <fstream>
 #include <process.h>
 #include <Windows.h>
 
@@ -22,7 +23,7 @@ bool				Success = false;
 HANDLE				HeventUR5 = NULL;
 HANDLE				HeventKinect = NULL;
 HANDLE				HeventNN = NULL;
-
+unsigned int		ImageCnt = 0;
 
 
 
@@ -31,7 +32,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 {
 	GT_RES	res_val;
 	pos = new Pose3D;
-	ICoordinateMapper *KinectCoordinate;
+	ImageCnt = 0;
 	//分配event
 	HeventUR5 = CreateEvent(NULL, FALSE, FALSE, NULL);
 	HeventKinect = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -59,7 +60,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	}
 	//初始化神经网络model
 	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE,Kinect);
-	if (NNet != NULL)
+	if (NNet == NULL)
 	{
 		printf("Nueral Network Init failed with error:%02x.\n", res_val);
 		return GT_RES_ERROR;
@@ -147,6 +148,16 @@ unsigned	__stdcall ThreadUR5(void *param)
 			printf("UR5 MoveGrasp failed with error:%02x\n", res);
 			return -1;
 		}
+
+		//save the predicted possibility to file
+		std::ofstream out;
+		out.open(PREDICTPATH, std::ios::app);
+		std::string str_tmp = std::to_string(ImageCnt);
+		if (5 > str_tmp.size())
+			str_tmp.insert(0, 5 - str_tmp.size(), '0');
+		out << str_tmp << " " << int(Success) << std::endl;
+		out.close();
+
 		//set UR5 event
 		SetEvent(HeventUR5);
 	}
@@ -227,12 +238,13 @@ unsigned __stdcall ThreadNN(void *param)
 		}
 		count = 0;
 		//GetPose
-		res = NNet->GetPose(pos);
+		res = NNet->GetPose(pos,ImageCnt);
 		if (res != GT_RES_OK)
 		{
 			printf("Get NN Pose failed with error:%02x\n", res);
 			return -1;
 		}
+		ImageCnt++;
 		res = NNet->UpdateGraphics(Graph);
 		if (res != GT_RES_OK)
 		{
