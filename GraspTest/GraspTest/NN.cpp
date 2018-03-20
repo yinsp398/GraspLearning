@@ -245,29 +245,17 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	cv::Mat *pMat1 = GraphIn->ColorImg;
 	cv::Mat *pMat2 = GraphIn->DepthImg;
 	cv::Mat *pMat = NULL;
-	if (flip)
-	{
-		pMat = new cv::Mat;
-		cv::flip(*pMat1, *pMat, 0);
-		pMat1 = pMat;
-		pMat = new cv::Mat;
-		cv::flip(*pMat2, *pMat, 0);
-		pMat2 = pMat;
-	}
 
 	if (fabs(pos->theta) > 1e-5)
 	{
 		pMat = new cv::Mat;
 		cv::Mat RotationMat1 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
 		cv::warpAffine(*pMat1, *pMat, RotationMat1, cv::Size(COLORWIDTH, COLORHEIGHT));
-		if (flip)
-			delete pMat1;
 		pMat1 = pMat;
+
 		pMat = new cv::Mat;
 		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center, pos->theta / PI * 180, COLORSCALE);
 		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
-		if (flip)
-			delete pMat2;
 		pMat2 = pMat;
 	}
 
@@ -279,19 +267,22 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		return res;
 	}
 
+	pMat = new cv::Mat;
+	cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT / 2, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
+	*pMat = (*pMat1)(rect1);
+	if (fabs(pos->theta) > 1e-5)
+		delete pMat1;
+	pMat1 = pMat;
+
+	pMat = new cv::Mat;
+	cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT / 2, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+	*pMat = (*pMat2)(rect2);
+	if (fabs(pos->theta) > 1e-5)
+		delete pMat2;
+	pMat2 = pMat;
+
 	if (contrast)
 	{
-		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT / 2, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
-		cv::Mat SubImg1 = (*pMat1)(rect1);
-		if (pMat)
-			delete pMat1;
-		pMat1 = &SubImg1;
-		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT / 2, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
-		cv::Mat SubImg2 = (*pMat2)(rect2);
-		if (pMat)
-			delete pMat2;
-		pMat2 = &SubImg2;
-
 		size_t width1 = pMat1->cols;
 		size_t height1 = pMat1->rows;
 		
@@ -299,7 +290,7 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		{
 			for (size_t j = 0; j < width1; j++)
 			{
-				GraphOut->ColorImg->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat1->at<uchar>(i, j)*contrast_scale);
+				pMat1->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat1->at<uchar>(i, j)*contrast_scale);
 			}
 		}
 
@@ -310,18 +301,21 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		{
 			for (size_t j = 0; j < width2; j++)
 			{
-				GraphOut->DepthImg->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat2->at<uchar>(i, j)*contrast_scale);
+				pMat2->at<uchar>(i, j) = cv::saturate_cast<uchar>(pMat2->at<uchar>(i, j)*contrast_scale);
 			}
 		}
 	}
+
+	if (flip)
+	{
+		cv::flip(*pMat1, *(GraphOut->ColorImg), 0);
+		cv::flip(*pMat2, *(GraphOut->DepthImg), 0);
+	}
 	else
 	{
-		cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2, pos->y - COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
-		cv::Mat SubImg1 = (*pMat1)(rect1);
-		SubImg1.copyTo(*(GraphOut->ColorImg));
-		cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2, Dy - DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
-		cv::Mat SubImg2 = (*pMat2)(rect2);
-		SubImg2.copyTo(*(GraphOut->DepthImg));
+		pMat1->copyTo(*(GraphOut->ColorImg));
+		pMat2->copyTo(*(GraphOut->DepthImg));
 	}
+
 	return GT_RES_OK;
 }
