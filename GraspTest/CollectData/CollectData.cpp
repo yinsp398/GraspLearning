@@ -79,12 +79,14 @@ int main()
 			}
 			for (size_t j = 0; j < 10; j++)
 			{												//随机获取十个不同角度的图片
-				pos.theta = rand() / double(RAND_MAX) * PI;
+				//pos.theta = rand() / double(RAND_MAX) * PI;
+				pos.theta = j / 10.0 * PI;
 				for (size_t k = 0; k < 2; k++)
 				{											//是否翻转
-					for (size_t p = 0; p < 4; p++)
+					for (size_t p = 0; p < 5; p++)
 					{										//不同的对比度
-						double contrast = rand() / double(RAND_MAX)*0.6 + 0.7;
+						//double contrast = rand() / double(RAND_MAX)*0.6 + 0.7;
+						double contrast = 0.7 + p / 4.0 * 0.6;
 						if ((res = NNet->GetSubImage(&pos, GraphIn, GraphOut, k, true, contrast)) != GT_RES_OK)
 						{
 							printf("Get subimage failed!\n");
