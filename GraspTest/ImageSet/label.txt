@@ -1,5 +1,0 @@
-1.5mmCircle.png 1
-1.5mmCrossLine.png 2
-1mmCircle.png 2
-1mmCrossLine.png 1
-2mmCircle.png 2
