@@ -2,7 +2,7 @@
 #include "NN.h"
 #include "Classification.h"
 #include "KinectDriver.h"
-
+#include "utils.h"
 
 NN::NN(	const std::string & model_file,
 		const std::string & trained_file,
@@ -17,11 +17,11 @@ NN::NN(	const std::string & model_file,
 	//m_pClassifier = new Classifier(model_file, trained_file, mean_file );
 	m_ppos = new std::pair<GraspPose, float>;
 	m_pposes = new std::vector<std::pair<GraspPose, float> >;
-	srand((unsigned)time(NULL));											//initialize the rand seed by time stamp
+	
 	m_pUpdateTime = new time_t;
 	*m_pUpdateTime = time(NULL);
 	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
 
 }
@@ -54,8 +54,7 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 		printf("Have no graphics.\n");
 		return GT_RES_ERROR;
 	}
-	// deeply copy from graph to m_pGraph
-	memcpy(m_pGraph->ColorImg, graph->ColorImg, sizeof(graph->ColorImg));
+	graph->ColorImg->copyTo(*(m_pGraph->ColorImg));
 	//memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
 	//convert depth image from 16bit to 8bit , 0~255 
 	int nWidth = graph->DepthImg->size.p[1];
@@ -127,6 +126,7 @@ GT_RES	NN::NNRun()
 //Get random pose one by one (algorithm 1)
 GT_RES	NN::GetRandomPose(GraspPose * pos)
 {
+	srand((unsigned)time(NULL));											//initialize the rand seed by time stamp
 	pos->x = rand() % (COLORSPACERIGHT - COLORSPACELEFT) + COLORSPACELEFT;
 	pos->y = rand() % (COLORSPACEDOWN - COLORSPACEUP) + COLORSPACEUP;
 	pos->theta = rand() / double(RAND_MAX) * PI;
@@ -151,11 +151,16 @@ GT_RES	NN::GetRandomPoses(std::vector<GraspPose> *vec_pos)
 GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 {
 	GT_RES res;
+	//debug test
+	GetRandomPose(&(m_ppos->first));
+	m_ppos->second = 0;
+	//debug test
+
 	if (m_ppos)
 	{
 		Graphics * graph = new Graphics;
-		graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-		graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
+		graph->ColorImg = new cv::Mat(COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORFORMAT);
+		graph->DepthImg = new cv::Mat(DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, COLORFORMAT);
 		//save the subimage about the m_ppos to file
 		if ((res = GetSubImage(&(m_ppos->first), m_pGraph, graph, false, false, 1)) != GT_RES_OK)
 		{
@@ -191,6 +196,10 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
 		m_pposes->clear();
+
+		delete graph->ColorImg;
+		delete graph->DepthImg;
+		delete graph;
 		return GT_RES_OK;
 	}
 	else
@@ -274,7 +283,6 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	}
 
 
-
 	pMat = new cv::Mat;
 	cv::Rect rect1(pos->x - COLORGRAPHWIDTH / 2.0, pos->y - COLORGRAPHHEIGHT / 2.0, COLORGRAPHWIDTH, COLORGRAPHHEIGHT);
 	(*pMat1)(rect1).copyTo(*pMat);
@@ -288,6 +296,8 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	if (fabs(pos->theta) > 1e-5)
 		delete pMat2;
 	pMat2 = pMat;
+
+
 
 	if (contrast)
 	{

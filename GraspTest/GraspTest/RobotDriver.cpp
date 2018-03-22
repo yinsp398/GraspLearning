@@ -5,6 +5,7 @@
 #include "UR5SocketCom.h"
 #include "UR5SocketComCodes.h"
 #include "utils.h"
+#include <iostream>
 
 RobotDriver::RobotDriver()
 {

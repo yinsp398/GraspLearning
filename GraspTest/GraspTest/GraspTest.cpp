@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "Common.h"
 #include <fstream>
+#include <iostream>
 #include <process.h>
 #include <Windows.h>
 
@@ -43,6 +44,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
 	Kinect = new KinectDriver;
 	//Load and save image from Kinect
+	Sleep(5000);
 	res_val = Kinect->GetKinectImage(Graph);
 	if (res_val != GT_RES_OK)
 	{
@@ -148,16 +150,20 @@ unsigned	__stdcall ThreadUR5(void *param)
 			printf("UR5 MoveGrasp failed with error:%02x\n", res);
 			return -1;
 		}
-
+		if (Success)
+			std::cout << pos->ToString() << "Get! " << std::endl;
+		else
+			std::cout <<  pos->ToString() <<"NotGet.." << std::endl;
 		//save the predicted possibility to file
 		std::ofstream out;
-		out.open(PREDICTPATH, std::ios::app);
+		out.open(RESULTPATH, std::ios::app);
 		std::string str_tmp = std::to_string(ImageCnt);
 		if (5 > str_tmp.size())
 			str_tmp.insert(0, 5 - str_tmp.size(), '0');
 		out << str_tmp << " " << int(Success) << std::endl;
 		out.close();
 
+		ImageCnt++;
 		//set UR5 event
 		SetEvent(HeventUR5);
 	}
@@ -180,6 +186,8 @@ unsigned	__stdcall	ThreadKinect(void *param)
 		printf("HeventUR5 have not initialized.\n");
 		return 0;
 	}
+	//set kinect event
+	SetEvent(HeventKinect);
 	while (1)
 	{
 		//wait for UR5 event trigger
@@ -214,6 +222,12 @@ unsigned __stdcall ThreadNN(void *param)
 		printf("HeventUR5 have not initialized.\n");
 		return 0;
 	}
+	res = NNet->UpdateGraphics(Graph);
+	if (res != GT_RES_OK)
+	{
+		printf("Update graphics failed with error:%02x\n", res);
+		return -1;
+	}
 	while (1)
 	{
 		//check Kinect event trigger
@@ -222,12 +236,15 @@ unsigned __stdcall ThreadNN(void *param)
 		{
 			//if no kinect trigger ,then runNN;
 			count++;
+			Sleep(1000);
+			/*
 			res = NNet->NNRun();
 			if (res != GT_RES_OK)
 			{
 				printf("NNet run error:%02x!\n", res);
 				return -1;
 			}
+			*/
 			//if count time out, so kinect is down.
 			if (count > COUNT_TIMEOUT)
 			{
@@ -244,7 +261,6 @@ unsigned __stdcall ThreadNN(void *param)
 			printf("Get NN Pose failed with error:%02x\n", res);
 			return -1;
 		}
-		ImageCnt++;
 		res = NNet->UpdateGraphics(Graph);
 		if (res != GT_RES_OK)
 		{

@@ -546,18 +546,19 @@ bool TestShowImage()
 	pos.y = (COLORSPACEUP + COLORSPACEDOWN) / 2.0;
 	cv::Point center(cvRound(pos.x), cvRound(pos.y));
 	cv::circle(*(m_pGraph->ColorImg), center, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
+	cv::Rect rect1(pos.x - (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, pos.y - (COLORSPACEDOWN - COLORSPACEUP) / 4.0, (COLORSPACERIGHT - COLORSPACELEFT), (COLORSPACEDOWN - COLORSPACEUP));
 	cv::namedWindow("color", CV_WINDOW_NORMAL);
-	cv::imshow("color", *(m_pGraph->ColorImg));
+	cv::imshow("color", (*(m_pGraph->ColorImg))(rect1));
 
 	float Dx, Dy;
 	m_pKinect->Colorpos2Depthpos(pos.x, pos.y, Dx, Dy);
 	cv::Point center2(cvRound(Dx), cvRound(Dy));
 	cv::circle(*(m_pGraph->DepthImg), center2, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
-	cv::Rect rect(Dx - (COLORSPACERIGHT - COLORSPACELEFT) / 4.0, Dy - (COLORSPACEDOWN - COLORSPACEUP) / 4.0, (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, (COLORSPACEDOWN - COLORSPACEUP) / 2.0);
+	cv::Rect rect2(Dx - (COLORSPACERIGHT - COLORSPACELEFT) / 4.0, Dy - (COLORSPACEDOWN - COLORSPACEUP) / 4.0, (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, (COLORSPACEDOWN - COLORSPACEUP) / 2.0);
 	cv::Mat img(m_pGraph->DepthImg->rows, m_pGraph->DepthImg->cols, COLORFORMAT);
 	GetBYTEformat((m_pGraph->DepthImg),&img);
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
-	cv::imshow("depth", img(rect));
+	cv::imshow("depth", img(rect2));
 	cv::waitKey(0);
 
 
