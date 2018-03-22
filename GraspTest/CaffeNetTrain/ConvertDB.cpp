@@ -79,7 +79,6 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 	const bool FLAGS_shuffle = true;
 	const bool FLAGS_is_color = true;
 	const bool FLAGS_encoded = true;
-	const bool FLAGS_check_size = false;
 	const std::string FLAGS_encode_type = "";
 	const int FLAGS_resize_height = 0;
 	const int FLAGS_resize_width = 0;
@@ -224,6 +223,8 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 		sum_blob_depth.set_data(i, sum_blob_depth.data(i) / count);
 	}
 	WriteProtoToBinaryFile(sum_blob_depth, meandepthfile);
+	dbColor->Close();
+	dbDepth->Close();
 	return count;
 }
 

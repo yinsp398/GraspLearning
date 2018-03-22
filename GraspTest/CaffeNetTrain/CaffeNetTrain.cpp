@@ -33,15 +33,15 @@ int main()
 		//生成配置 solver.prototxt文件
 		std::fstream fpsolver;
 		fpsolver.open("..\\imageset\\solver.prototxt", std::ios::out);
-		fpsolver << "net:" << "..\\imageset\\Alex_train_test.prototxt" << std::endl;
+		fpsolver << "net:" << "\"..\\imageset\\Alex_train_test.prototxt\"" << std::endl;
 		fpsolver << "test_iter:" << ImgCnt / BATCHSIZE << std::endl;
 		fpsolver << "test_interval:" << 1000 << std::endl;
 		fpsolver << "base_lr:" << base_lr << std::endl;
 		fpsolver << "momentum:" << momentum << std::endl;
-		fpsolver << "lr_policy:fixed" << std::endl;
+		fpsolver << "lr_policy:\"fixed\"" << std::endl;
 		fpsolver << "display:100" << std::endl;
 		fpsolver << "max_iter:" << 5000 << std::endl;
-		fpsolver << "snapshot:" << ImgCnt / BATCHSIZE * 5 << std::endl;
+		fpsolver << "snapshot:" << 5000 << std::endl;
 		fpsolver << "snapshot_prefix:\"..\\imageset\\Alex_" << iteration << "\"" << std::endl;
 		fpsolver << "solver_mode:CPU" << std::endl;
 		fpsolver.close();
