@@ -9,9 +9,11 @@
 #include <UR5SocketComCodes.h>
 #include <utils.h>
 #include <fstream>
+#include <iomanip>
 
-//#define _DEBUG_PRINT_
-#define _MAX_RADIUS_		120
+#define _DEBUG_PRINT_
+#define _MAX_RADIUS_		200
+#define _MIN_RADIUS_		50
 #define _DETAL_				5
 
 struct Pose {
@@ -94,9 +96,11 @@ bool MovetoPos(Pose3D URpos);
 bool ResetPos();
 bool TestSaveMoreThanOneImage();
 bool TestCalibration();
+bool TestMoveCalibration();
 bool TestShowImage();
 bool TestVerifyTransMat();
-bool TestErrorUR5();
+bool TestErrorUR5(int Num);
+
 
 //启动UR5
 bool OpenUR5()
@@ -213,19 +217,19 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 	}
 	Pose sum, pos;
 	int CircleCnt = 0;
-	for (size_t i = 0; i < _MAX_RADIUS_; i += _DETAL_)
+	for (size_t i = _MIN_RADIUS_; i < _MAX_RADIUS_; i += _DETAL_)
 	{
 		cv::Mat ImageGau;
 		cv::GaussianBlur(Image, ImageGau, cv::Size(7, 7), 2, 2);
 		std::vector<cv::Vec3f> circles;
 		HoughCircles(ImageGau, circles, CV_HOUGH_GRADIENT, 1.5, 10, 200, 150, i, i+_DETAL_);
 #ifdef _DEBUG_PRINT_
-		std::cout << i << "~" << i + _DETAL_ << ":";
+		//std::cout << i << "~" << i + _DETAL_ << ":";
 #endif
 		if (circles.size() == 0)
 		{
 #ifdef _DEBUG_PRINT_
-			std::cout << "Get not any circle" << std::endl;
+			//std::cout << "Get not any circle" << std::endl;
 #endif
 			continue;
 		}
@@ -235,14 +239,14 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 			pos.y = circles[0][1];
 			pos.z = circles[0][2];
 #ifdef _DEBUG_PRINT_
-			std::cout << "radius " << pos.z << std::endl;
+			//std::cout << "radius " << pos.z << std::endl;
 #endif
 
 		}
 		else if (circles.size() > 1)
 		{
 #ifdef _DEBUG_PRINT_
-			std::cout << "Get more than one circles:" << circles.size() << std::endl;
+			//std::cout << "Get more than one circles:" << circles.size() << std::endl;
 #endif
 			float CircleCnt = circles.size();
 			float x = 0, y = 0, radius = 0;;
@@ -252,7 +256,7 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 				y += circles[i][1];
 				radius += circles[i][2];
 #ifdef _DEBUG_PRINT_
-				std::cout << "radius " << circles[i][2] << " ";
+				//std::cout << "radius " << circles[i][2] << " ";
 #endif
 			}
 			std::cout << std::endl;
@@ -273,6 +277,7 @@ bool GetCirclePos(cv::Mat Image,Pose &posCircle)
 	}
 	posCircle = sum / CircleCnt;
 	DrawCircle(Image, posCircle);
+	std::cout << "Get " << CircleCnt << " circles" << std::endl;
 	return true;
 }
 //从图中识别直线（实际未使用）
@@ -338,7 +343,7 @@ bool IsInLimit(CameraSpacePoint pos)
 		return false;
 	if (pos.Y > 2.0 || pos.Y < -2.0)
 		return false;
-	if (pos.Z > 1.1 || pos.Z < 0.8)
+	if (pos.Z > 2.0 || pos.Z < 0.0)
 		return false;
 	return true;
 }
@@ -429,7 +434,7 @@ bool TestCalibration()
 	printf("init ok\n");
 	std::ofstream fp;
 	fp.open("coordinate.txt", std::ios::out);
-	Sleep(2000);
+	Sleep(3000);
 	for (size_t i = 0; i < 10; i++)
 	{
 
@@ -451,7 +456,7 @@ bool TestCalibration()
 				std::cout << "get image center failed" << std::endl;
 				continue;
 			}
-			std::cout << "Colorpos: " << pos.x << " " << pos.y << " " << pos.z << " ";
+			std::cout << std::setprecision(7) << "Colorpos: " << pos.x << " " << pos.y << " " << pos.z << " ";
 
 			std::vector<ColorSpacePoint> v_Colorpos;
 			std::vector<CameraSpacePoint> v_Camerapos;
@@ -492,13 +497,13 @@ bool TestCalibration()
 			CameraposSum.X += Camerapos.X;
 			CameraposSum.Y += Camerapos.Y;
 			CameraposSum.Z += Camerapos.Z; 
-			std::cout << sizeCnt << "\t" << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\n";
+			std::cout << std::setprecision(7) << sizeCnt << "\t" << Camerapos.X << "\t" << Camerapos.Y << "\t" << Camerapos.Z << "\n";
 		}
 		CameraposSum.X /= 5;
 		CameraposSum.Y /= 5;
 		CameraposSum.Z /= 5;
-		fp << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
-		std::cout << 5 << "\n" << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
+		fp << std::setprecision(7) << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
+		std::cout << std::setprecision(7) << 5 << "\n" << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << "\t";
 
 
 		std::cin.get();
@@ -517,8 +522,8 @@ bool TestCalibration()
 			delete m_pUR5;
 			continue;
 		}
-		fp << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
-		std::cout << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
+		fp << std::setprecision(7) << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
+		std::cout << std::setprecision(7) << pos.x << "\t" << pos.y << "\t" << pos.z << std::endl;
 		if (!m_pUR5->DisableRobot())
 		{
 			std::cout << "disable UR5 failed: '%s'" << m_pUR5->GetLastError().c_str() << std::endl;
@@ -530,6 +535,153 @@ bool TestCalibration()
 	}
 	fp.close();
 	Uninit();
+	return true;
+}
+//测试机器人主动移动，进行坐标系的校准
+bool TestMoveCalibration()
+{
+	GT_RES res;
+	Init();
+	std::ofstream fp;
+	srand((unsigned int)(time(NULL)));
+	fp.open("coordinate.txt", std::ios::app);
+	Sleep(3000);
+	m_pUR5 = new UR5SocketCom;
+	while ((res = OpenUR5()) != GT_RES_OK)
+	{
+		std::cout << "open UR5 failed with error:" << res << std::endl;
+	}
+	printf("init ok\n");
+	for (size_t i = 0; i < 10; i++)
+	{
+		Pose pos_r,pos_c;
+		float x, y, z;
+		x = rand() / (double)(RAND_MAX) * 0.1;
+		y = -1 * (rand() / (double)(RAND_MAX) * 0.04 + 0.46);
+		z = rand() / (double)(RAND_MAX) * 0.21 + 0.19;
+		printf("move to pos:%f %f %f\n", x, y, z);
+		if (!(m_pUR5->MoveTCP(x,y,z,PI/2,PI/2-0.04,0)))
+		{
+			printf("move tcp failed!\n");
+			continue;
+		}
+		std::wcout << "Wait to Get robot pos....." << std::endl;
+		Sleep(1000);
+		if (!GetRobotPos(pos_r))
+		{
+			std::cout << "get robot pos failed" << std::endl;
+			continue;
+		}
+		std::cout << "error:" << std::setprecision(7) << pos_r.x - x << "\t" << pos_r.y - y << "\t" << pos_r.z - z << "\n";
+		std::cout << std::setprecision(7) << pos_r.x << "\t" << pos_r.y << "\t" << pos_r.z << "\n";
+
+		std::cin.get();
+		CameraSpacePoint CameraposSum;
+		CameraSpacePoint CameraposMax;
+		CameraSpacePoint CameraposMin;
+		CameraSpacePoint CameraposSquareSum;
+		CameraSpacePoint Camerapos_v[5];
+		CameraposSum.X = 0;
+		CameraposSum.Y = 0;
+		CameraposSum.Z = 0;
+		CameraposMax.X = -100;
+		CameraposMax.Y = -100;
+		CameraposMax.Z = -100;
+		CameraposMin.X = 100.0;
+		CameraposMin.Y = 100.0;
+		CameraposMin.Z = 100.0;
+		CameraposSquareSum.X = 0;
+		CameraposSquareSum.Y = 0;
+		CameraposSquareSum.Z = 0;
+		for (size_t j = 0; j < 5; j++)													//获取多幅图片5，减少彩色图片和深度图片的误差
+		{
+			res = m_pKinect->GetKinectImage(m_pGraph);
+			if (res != GT_RES_OK)
+			{
+				std::cout << "Get image error\n" << std::endl;
+				continue;
+			}
+			if (!GetCirclePos(*(m_pGraph->ColorImg), pos_c))
+			{
+				std::cout << "get image center failed" << std::endl;
+				continue;
+			}
+			std::cout << std::setprecision(7) << "Colorpos: " << pos_c.x << "\t" << pos_c.y << "\t" << pos_c.z << "\t";
+
+			std::vector<ColorSpacePoint> v_Colorpos;
+			std::vector<CameraSpacePoint> v_Camerapos;
+			for (size_t i = 0; i < 5; i++)
+			{
+				for (size_t j = 0; j < 5; j++)
+				{
+					ColorSpacePoint pos_tmp;
+					pos_tmp.X = pos_c.x + i - 2;
+					pos_tmp.Y = pos_c.y + j - 2;
+					v_Colorpos.push_back(pos_tmp);
+				}
+			}
+			res = m_pKinect->Colorpos2Camerapos(v_Colorpos, v_Camerapos);
+			if (res != GT_RES_OK)
+			{
+				std::cout << "Coordiante color to camera failed with error:" << res << std::endl;
+				continue;
+			}
+			Camerapos_v[j].X = 0;
+			Camerapos_v[j].Y = 0;
+			Camerapos_v[j].Z = 0;
+			int sizeCnt = 0;
+			for (size_t k = 0; k < v_Camerapos.size(); k++)
+			{
+				if (IsInLimit(v_Camerapos[k]))
+				{
+					Camerapos_v[j].X += v_Camerapos[k].X;
+					Camerapos_v[j].Y += v_Camerapos[k].Y;
+					Camerapos_v[j].Z += v_Camerapos[k].Z;
+					sizeCnt++;
+				}
+			}
+			Camerapos_v[j].X /= sizeCnt;
+			Camerapos_v[j].Y /= sizeCnt;
+			Camerapos_v[j].Z /= sizeCnt;
+			std::cout << std::setprecision(7) << sizeCnt << "\t" << Camerapos_v[j].X << "\t" << Camerapos_v[j].Y << "\t" << Camerapos_v[j].Z << "\n";
+		}
+		for (size_t j = 0; j < 5; j++)
+		{
+			CameraposMax.X = max(CameraposMax.X, Camerapos_v[j].X);
+			CameraposMax.Y = max(CameraposMax.Y, Camerapos_v[j].Y);
+			CameraposMax.Z = max(CameraposMax.Z, Camerapos_v[j].Z);
+			CameraposMin.X = min(CameraposMin.X, Camerapos_v[j].X);
+			CameraposMin.Y = min(CameraposMin.Y, Camerapos_v[j].Y);
+			CameraposMin.Z = min(CameraposMin.Z, Camerapos_v[j].Z);
+			CameraposSum.X += Camerapos_v[j].X;
+			CameraposSum.Y += Camerapos_v[j].Y;
+			CameraposSum.Z += Camerapos_v[j].Z;
+			CameraposSquareSum.X += Camerapos_v[j].X*Camerapos_v[j].X;
+			CameraposSquareSum.Y += Camerapos_v[j].Y*Camerapos_v[j].Y;
+			CameraposSquareSum.Z += Camerapos_v[j].Z*Camerapos_v[j].Z;
+			
+		}
+		CameraposSum.X /= 5;
+		CameraposSum.Y /= 5;
+		CameraposSum.Z /= 5;
+		CameraposSquareSum.X = CameraposSquareSum.X - CameraposSum.X*CameraposSum.X;
+		std::cout << std::setprecision(7) << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << std::endl;
+		std::cout << std::setprecision(7) << CameraposSquareSum.X << "\t" << CameraposSquareSum.Y << "\t" << CameraposSquareSum.Z << std::endl;
+		std::cout << std::setprecision(7) << CameraposMax.X-CameraposMin.X << "\t" << CameraposMax.Y - CameraposMin.Y << "\t" << CameraposMax.Z - CameraposMin.Z << std::endl;
+		std::cout << "record this data?(y or n)" << std::endl;
+		if (std::cin.get() == 'y')
+		{
+			fp << std::setprecision(7) << pos_r.x << "\t" << pos_r.y << "\t" << pos_r.z << "\t";
+			fp << std::setprecision(7) << CameraposSum.X << "\t" << CameraposSum.Y << "\t" << CameraposSum.Z << std::endl;
+		}
+	}
+	fp.close();
+	Uninit();
+	if (!m_pUR5->DisableRobot())
+	{
+		std::cout << "disable UR5 failed: '%s'" << m_pUR5->GetLastError().c_str() << std::endl;
+	}
+	delete m_pUR5;
 	return true;
 }
 //测试显示图片窗口
@@ -689,8 +841,8 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-	TestShowImage();
-
+	//TestSaveMoreThanOneImage();
+	TestMoveCalibration();
     return 0;
 }
 
