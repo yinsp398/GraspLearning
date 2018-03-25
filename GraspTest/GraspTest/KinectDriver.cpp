@@ -210,7 +210,12 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]ColorImg;
 		return res;
 	}
-
+	HRESULT hr = m_pCoordinateMapper->MapDepthFrameToCameraSpace(DEPTHWIDTH*DEPTHHEIGHT, DepthImg, DEPTHWIDTH*DEPTHHEIGHT, Graph->CameraPos);
+	if (FAILED(hr))
+	{
+		printf("Mat depth frame to CameraSpace failed!\n");
+		return GT_RES_ERROR;
+	}
 	delete[]ColorImg;
 	return res;
 }

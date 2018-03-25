@@ -3,6 +3,7 @@
 #include <opencv2\core\core.hpp>
 #include <opencv2\imgcodecs.hpp>
 
+typedef struct _CameraSpacePoint CameraSpacePoint;
 /*********************************************************************/
 //一些基础的宏定义
 
@@ -83,6 +84,7 @@ struct Graphics
 {
 	cv::Mat *ColorImg;
 	cv::Mat *DepthImg;
+	CameraSpacePoint *CameraPos;
 };
 
 

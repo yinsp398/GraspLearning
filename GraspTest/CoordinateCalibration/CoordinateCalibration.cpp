@@ -381,6 +381,7 @@ bool TestSaveMoreThanOneImage()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->CameraPos = new CameraSpacePoint[DEPTHWIDTH*DEPTHHEIGHT];
 	//Get the Kinect image(Color & depth & depth in color frame)
 
 	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
@@ -409,7 +410,13 @@ bool TestSaveMoreThanOneImage()
 		bl1 = cv::imwrite(prefix1 + std::to_string(i) + ".jpg", *(m_pGraph->ColorImg));
 		bl2 = cv::imwrite(prefix2 + std::to_string(i) + ".jpg", *(m_pGraph->DepthImg));
 		bl3 = cv::imwrite(prefix3 + std::to_string(i) + ".jpg", DepthInBYTEImg);
-
+		std::ofstream fp;
+		fp.open("CloudPoints.txt", std::ios::out);
+		for (size_t i = 0; i < DEPTHWIDTH*DEPTHHEIGHT; i++)
+		{
+			fp << m_pGraph->CameraPos->X << " " << m_pGraph->CameraPos->Y << " " << m_pGraph->CameraPos->Z << std::endl;
+		}
+		fp.close();
 		if (!(bl1&&bl2&&bl3))
 		{
 			std::cout << "save image failed" << std::endl;
@@ -688,7 +695,7 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-	TestShowImage();
+	TestSaveMoreThanOneImage();
 
     return 0;
 }

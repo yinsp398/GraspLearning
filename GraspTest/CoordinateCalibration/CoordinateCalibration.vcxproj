@@ -154,11 +154,6 @@
     <ClCompile Include="CoordinateCalibration.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\GraspTest\GraspTest.vcxproj">
-      <Project>{9867e57b-87a0-4ad4-b256-78c1ffa35371}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\GraspTest\KinectDriver.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

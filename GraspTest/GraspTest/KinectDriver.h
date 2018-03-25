@@ -50,6 +50,7 @@ public:
 	//从彩色图像中的位置得到机器人实际的抓取位置和姿态(x, y, theta)->(x, y, z, Rx, Ry, Rz)
 	GT_RES	ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR);
 
+
 private:
 
 	//获取彩色图像
