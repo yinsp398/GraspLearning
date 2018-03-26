@@ -156,6 +156,11 @@ bool Uninit()
 	delete m_pKinect;
 	return true;
 }
+//判断数字不是inf也不是nan
+bool IsNotInf(float x)
+{
+	return (x <= DBL_MAX && x >= -DBL_MAX);
+}
 //获取图像中心位置（实际未使用）
 bool GetCenterPos(Pose &pos)
 {
@@ -414,7 +419,8 @@ bool TestSaveMoreThanOneImage()
 		fp.open("CloudPoints.txt", std::ios::out);
 		for (size_t i = 0; i < DEPTHWIDTH*DEPTHHEIGHT; i++)
 		{
-			fp << m_pGraph->CameraPos->X << " " << m_pGraph->CameraPos->Y << " " << m_pGraph->CameraPos->Z << std::endl;
+			if (IsNotInf(m_pGraph->CameraPos[i].X) && IsNotInf(m_pGraph->CameraPos[i].Y) && IsNotInf(m_pGraph->CameraPos[i].Z))
+				fp << m_pGraph->CameraPos[i].X << " " << m_pGraph->CameraPos[i].Y << " " << m_pGraph->CameraPos[i].Z << std::endl;
 		}
 		fp.close();
 		if (!(bl1&&bl2&&bl3))
