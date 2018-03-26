@@ -417,10 +417,13 @@ bool TestSaveMoreThanOneImage()
 		bl3 = cv::imwrite(prefix3 + std::to_string(i) + ".jpg", DepthInBYTEImg);
 		std::ofstream fp;
 		fp.open("CloudPoints.txt", std::ios::out);
-		for (size_t i = 0; i < DEPTHWIDTH*DEPTHHEIGHT; i++)
+		for (size_t i = 0; i < DEPTHHEIGHT; i++)
 		{
-			if (IsNotInf(m_pGraph->CameraPos[i].X) && IsNotInf(m_pGraph->CameraPos[i].Y) && IsNotInf(m_pGraph->CameraPos[i].Z))
-				fp << m_pGraph->CameraPos[i].X << " " << m_pGraph->CameraPos[i].Y << " " << m_pGraph->CameraPos[i].Z << std::endl;
+			for (size_t j = 0; j < DEPTHWIDTH; j++)
+			{
+				if (IsNotInf(m_pGraph->CameraPos[i*DEPTHWIDTH+j].X) && IsNotInf(m_pGraph->CameraPos[i*DEPTHWIDTH + j].Y) && IsNotInf(m_pGraph->CameraPos[i*DEPTHWIDTH + j].Z))
+					fp << m_pGraph->CameraPos[i*DEPTHWIDTH + j].X << " " << m_pGraph->CameraPos[i*DEPTHWIDTH + j].Y << " " << m_pGraph->CameraPos[i*DEPTHWIDTH + j].Z << std::endl;
+			}
 		}
 		fp.close();
 		if (!(bl1&&bl2&&bl3))
