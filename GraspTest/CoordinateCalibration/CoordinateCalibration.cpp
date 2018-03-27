@@ -749,6 +749,7 @@ bool TestVerifyTransMat()
 			std::cout << "get image center failed" << std::endl;
 			continue;
 		}
+		std::cout << "Get pos:" << pos.x << " " << pos.y << std::endl;
 		GraspPose grasppos;
 		grasppos.x = pos.x;
 		grasppos.y = pos.y;
@@ -761,7 +762,7 @@ bool TestVerifyTransMat()
 			std::cout << "Grasppos transform to URpos failed " << std::endl;
 			continue;
 		}
-
+		std::cout << "Move to " << URpos.ToString() << std::endl;
 		if (!MovetoPos(URpos))
 		{
 			std::cout << "Move to pos failed" << std::endl;
@@ -842,7 +843,8 @@ bool TestErrorUR5(int Num)
 int main()
 {
 	//TestSaveMoreThanOneImage();
-	TestMoveCalibration();
+	//TestMoveCalibration();
+	TestVerifyTransMat();
     return 0;
 }
 

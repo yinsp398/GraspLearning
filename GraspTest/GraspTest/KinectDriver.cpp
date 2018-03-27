@@ -253,6 +253,7 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 	Colorpos.Y = posColor.y;
 	//是否要取多个点做平均？？
 	res = Colorpos2Camerapos(Colorpos, Camerapos);
+	std::cout << "camerapos:" << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z << std::endl;
 	if (res != GT_RES_OK)
 	{
 		return res;
@@ -281,7 +282,7 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 
 	posUR.x = MatUR.at<float>(0, 0);
 	posUR.y = MatUR.at<float>(1, 0);
-	posUR.z = MatUR.at<float>(2, 0) + 0.002;
+	posUR.z = MatUR.at<float>(2, 0) + 0.000;
 	posUR.Rx = PI;																				//Default Robot TCP is towards down;
 	posUR.Ry = 0;
 	posUR.Rz = posColor.theta + ANGLEBIAS;														//Anglebias is calibrated or learn by nerual network.

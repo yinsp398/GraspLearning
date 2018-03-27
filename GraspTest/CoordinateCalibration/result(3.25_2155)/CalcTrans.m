@@ -1,8 +1,8 @@
 load coordinate.txt
 [row,low]=size(coordinate);
-RobotMat = coordinate(:,4:6)';
+RobotMat = coordinate(:,1:3)';
 
-CameraMat = [coordinate(:,1:3)';ones(1,row)];
+CameraMat = [coordinate(:,4:6)';ones(1,row)];
 
 
 
