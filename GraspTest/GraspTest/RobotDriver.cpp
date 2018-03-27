@@ -97,6 +97,11 @@ GT_RES	RobotDriver::MoveGrasp(Pose3D *pos, bool *success)
 	{
 		return res;
 	}
+	res = GripperClose();
+	if (res != GT_RES_OK)
+	{
+		return res;
+	}
 	res = IsGrasp(success);
 	if (res != GT_RES_OK)
 	{

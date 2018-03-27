@@ -698,7 +698,7 @@ bool TestShowImage()
 	pos.y = (COLORSPACEUP + COLORSPACEDOWN) / 2.0;
 	cv::Point center(cvRound(pos.x), cvRound(pos.y));
 	cv::circle(*(m_pGraph->ColorImg), center, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
-	cv::Rect rect1(pos.x - (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, pos.y - (COLORSPACEDOWN - COLORSPACEUP) / 4.0, (COLORSPACERIGHT - COLORSPACELEFT), (COLORSPACEDOWN - COLORSPACEUP));
+	cv::Rect rect1(pos.x - (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, pos.y - (COLORSPACEDOWN - COLORSPACEUP) / 2.0, (COLORSPACERIGHT - COLORSPACELEFT), (COLORSPACEDOWN - COLORSPACEUP));
 	cv::namedWindow("color", CV_WINDOW_NORMAL);
 	cv::imshow("color", (*(m_pGraph->ColorImg))(rect1));
 
@@ -842,9 +842,10 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
+	TestShowImage();
 	//TestSaveMoreThanOneImage();
 	//TestMoveCalibration();
-	TestVerifyTransMat();
+	//TestVerifyTransMat();
     return 0;
 }
 

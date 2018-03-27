@@ -282,7 +282,7 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 
 	posUR.x = MatUR.at<float>(0, 0);
 	posUR.y = MatUR.at<float>(1, 0);
-	posUR.z = MatUR.at<float>(2, 0) + 0.000;
+	posUR.z = MatUR.at<float>(2, 0) + 0.005;
 	posUR.Rx = PI;																				//Default Robot TCP is towards down;
 	posUR.Ry = 0;
 	posUR.Rz = posColor.theta + ANGLEBIAS;														//Anglebias is calibrated or learn by nerual network.

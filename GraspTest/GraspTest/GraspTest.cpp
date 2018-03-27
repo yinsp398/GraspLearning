@@ -151,9 +151,9 @@ unsigned	__stdcall ThreadUR5(void *param)
 			return -1;
 		}
 		if (Success)
-			std::cout << pos->ToString() << "Get! " << std::endl;
+			std::cout << pos->ToString() << " Get! " << std::endl;
 		else
-			std::cout <<  pos->ToString() <<"NotGet.." << std::endl;
+			std::cout <<  pos->ToString() <<" NotGet.." << std::endl;
 		//save the predicted possibility to file
 		std::ofstream out;
 		out.open(RESULTPATH, std::ios::app);

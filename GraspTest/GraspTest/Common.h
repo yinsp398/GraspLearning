@@ -36,10 +36,10 @@
 #define		TRAINEDFILE						"test13"					//训练好的参数文件
 #define		MEANFILE						"test2"						//平均值文件
 
-#define		COLORSPACEUP					490							//彩色空间（二维）约束的上边界
-#define		COLORSPACEDOWN					800							//下边界
-#define		COLORSPACELEFT					810							//左边界
-#define		COLORSPACERIGHT					1120						//右边界
+#define		COLORSPACEUP					530							//彩色空间（二维）约束的上边界
+#define		COLORSPACEDOWN					765							//下边界
+#define		COLORSPACELEFT					795							//左边界
+#define		COLORSPACERIGHT					1130						//右边界
 
 #define		COLORGRAPHWIDTH					100							//局部彩色图像宽度
 #define		COLORGRAPHHEIGHT				100							//局部彩色图像高度
