@@ -253,7 +253,6 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 	Colorpos.Y = posColor.y;
 	//是否要取多个点做平均？？
 	res = Colorpos2Camerapos(Colorpos, Camerapos);
-	std::cout << "camerapos:" << Camerapos.X << " " << Camerapos.Y << " " << Camerapos.Z << std::endl;
 	if (res != GT_RES_OK)
 	{
 		return res;

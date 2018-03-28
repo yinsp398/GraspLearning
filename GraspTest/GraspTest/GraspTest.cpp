@@ -33,7 +33,8 @@ GT_RES	InitGT(std::string Caffe_Path)
 {
 	GT_RES	res_val;
 	pos = new Pose3D;
-	ImageCnt = 0;
+	std::cout << "输入图片标号起点：" << std::endl;
+	std::cin >> ImageCnt;
 	//分配event
 	HeventUR5 = CreateEvent(NULL, FALSE, FALSE, NULL);
 	HeventKinect = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -151,9 +152,9 @@ unsigned	__stdcall ThreadUR5(void *param)
 			return -1;
 		}
 		if (Success)
-			std::cout << pos->ToString() << " Get! " << std::endl;
+			std::cout << ImageCnt << ":" << pos->ToString() << " Get! " << std::endl;
 		else
-			std::cout <<  pos->ToString() <<" NotGet.." << std::endl;
+			std::cout << ImageCnt << ":" <<  pos->ToString() <<" NotGet.." << std::endl;
 		//save the predicted possibility to file
 		std::ofstream out;
 		out.open(RESULTPATH, std::ios::app);

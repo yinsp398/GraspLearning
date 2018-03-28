@@ -24,8 +24,8 @@
 #define		PORT2							"30001"						//端口port2
 
 #define		PI								3.14159265359
-#define		POSE1							0.1,-0.1,0.4,PI,0,PI		//关键路径节点1
-#define		POSE2							0.2,-0.5,0.4,PI,0,PI		//关键路径节点2
+#define		POSE1							0.1,-0.2,0.25,PI,0,PI		//关键路径节点1
+#define		POSE2							0.2,-0.5,0.25,PI,0,PI		//关键路径节点2
 #define		TCPPOSE							0.0,0.0,0.16,0.0,0.0,0.0	//TCP位置
 #define		PAYLOAD							1.0,0.0,0.0,0.05			//负载大小及重心位置
 
@@ -36,10 +36,10 @@
 #define		TRAINEDFILE						"test13"					//训练好的参数文件
 #define		MEANFILE						"test2"						//平均值文件
 
-#define		COLORSPACEUP					530							//彩色空间（二维）约束的上边界
-#define		COLORSPACEDOWN					765							//下边界
-#define		COLORSPACELEFT					795							//左边界
-#define		COLORSPACERIGHT					1130						//右边界
+#define		COLORSPACEUP					535							//彩色空间（二维）约束的上边界
+#define		COLORSPACEDOWN					760							//下边界
+#define		COLORSPACELEFT					800							//左边界
+#define		COLORSPACERIGHT					1125						//右边界
 
 #define		COLORGRAPHWIDTH					100							//局部彩色图像宽度
 #define		COLORGRAPHHEIGHT				100							//局部彩色图像高度
