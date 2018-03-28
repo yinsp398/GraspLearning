@@ -50,14 +50,14 @@ public:
 	//从彩色图像中的位置得到机器人实际的抓取位置和姿态(x, y, theta)->(x, y, z, Rx, Ry, Rz)
 	GT_RES	ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR);
 
+	//获取深度图像
+	GT_RES	GetDepthImage(UINT16 *DepthImg);
 
 private:
 
 	//获取彩色图像
 	GT_RES	GetColorImage(RGBQUAD *ColorImg);
 
-	//获取深度图像
-	GT_RES	GetDepthImage(UINT16 *DepthImg);
 
 	//转换深度图到Mat格式
 	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);

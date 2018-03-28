@@ -574,6 +574,8 @@ bool TestShowImage()
 	GetBYTEformat((m_pGraph->DepthImg),&img);
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
 	cv::imshow("depth", img(rect));
+
+
 	cv::waitKey(0);
 
 
@@ -702,10 +704,55 @@ bool TestErrorUR5(int Num)
 	return true;
 }
 
+bool TestKinectDepthUncertainty()
+{
+	GT_RES res;
+	Init();
+	printf("Init Ok\n");
+	Sleep(2000);
+	std::vector<UINT16*> DepthPoints;
+	std::vector<float> DepthSum(DEPTHWIDTH*DEPTHHEIGHT, 0);
+	std::vector<UINT16> DepthMax(DEPTHWIDTH*DEPTHHEIGHT, 0);
+	std::vector<UINT16> DepthMin(DEPTHWIDTH*DEPTHHEIGHT, 0-1);
+	cv::Mat ShowUnCertainty(DEPTHHEIGHT,DEPTHWIDTH,CV_16UC1);
+	DepthPoints.resize(10);
+	for (size_t i = 0; i < 10; i++)
+	{
+		DepthPoints[i] = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
+		
+		res = GT_RES_ERROR;
+		while (res != GT_RES_OK)
+		{
+			res = m_pKinect->GetDepthImage(DepthPoints[i]);
+			if (res != GT_RES_OK)
+			{
+				printf("Get Depth image error:%02x\n", res);
+			}
+		}
+		for (size_t j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
+		{
+			DepthSum[j] += (float)DepthPoints[i][j] / 10.0;
+			DepthMax[j] = max(DepthPoints[i][j], DepthMax[j]);
+			DepthMin[j] = min(DepthPoints[i][j], DepthMin[j]);
+		}
+	}
+	for (size_t i = 0; i < DEPTHHEIGHT; i++)
+	{
+		for (size_t j = 0; j < DEPTHWIDTH; j++)
+		{
+			ShowUnCertainty.at<UINT16>(i, j) = DepthMax[i*DEPTHWIDTH + j] - DepthMin[i*DEPTHWIDTH + j];
+		}
+	}
+	cv::namedWindow("depth", CV_WINDOW_NORMAL);
+	cv::imshow("depth", ShowUnCertainty);
+	cv::waitKey(0);
+	return true;
+	
+}
 int main()
 {
-	TestSaveMoreThanOneImage();
-
+	//TestSaveMoreThanOneImage();
+	TestKinectDepthUncertainty();
     return 0;
 }
 
