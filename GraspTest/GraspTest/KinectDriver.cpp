@@ -4,6 +4,7 @@
 #include <opencv2\imgproc.hpp>
 #include <Kinect.h>
 #include <numeric>
+#include <utility>
 #include <stdio.h>
 
 
@@ -232,41 +233,157 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	LeftDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorLeft];
 	RightUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorRight];
 	RightDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorRight];
-	unsigned int CameraLeft, CameraRight, CameraUp, CameraDown;
-	CameraLeft = (unsigned int)(max(LeftUp->X, LeftDown->X)*1000+1);
-	CameraRight = (unsigned int)(min(RightUp->X, RightDown->X) * 1000);
-	CameraUp = (unsigned int)(max(LeftUp->Y, RightUp->Y) * 1000+1);
-	CameraDown = (unsigned int)(min(LeftDown->Y, RightDown->Y) * 1000);
-
+	int CameraLeft, CameraRight, CameraUp, CameraDown;
+	CameraLeft = (int)(max(LeftUp->X, LeftDown->X)*1000+1);
+	CameraRight = (int)(min(RightUp->X, RightDown->X) * 1000);
+	CameraUp = (int)(min(LeftUp->Y, RightUp->Y) * 1000);
+	CameraDown = (int)(max(LeftDown->Y, RightDown->Y) * 1000+1);
+	m_CloudHeightBias = CameraDown;
+	m_CloudWidthBias = CameraLeft;
+	unsigned int CloudHeight, CloudWidth;
+	CloudHeight = (CameraUp - CameraDown) / CLOUDRESOLUTION;
+	CloudWidth = (CameraRight - CameraLeft) / CLOUDRESOLUTION;
 	std::vector<std::vector<std::vector<CameraSpacePoint> > > V_CloudPoints;
-	V_CloudPoints.resize(CameraDown - CameraUp + 1);
-	for (size_t i = 0; i < CameraDown - CameraUp + 1; i++)
+	V_CloudPoints.resize(CloudHeight);
+	for (size_t i = 0; i < CloudHeight; i++)
 	{
-		V_CloudPoints[i].resize(CameraRight - CameraLeft + 1);
+		V_CloudPoints[i].resize(CloudWidth);
 	}
+	float MinDepth = FLT_MAX, MaxDepth = -FLT_MAX;
 	for (size_t i = ColorUp; i <= ColorDown; i++)
 	{
 		for (size_t j = ColorLeft; j <= ColorRight; j++)
 		{
 			CameraSpacePoint *tmp = &m_pColorInCameraSpace[i*COLORWIDTH + j];
-			if (size_t(tmp->Y+0.5) >= CameraUp && size_t(tmp->Y + 0.5)  <=CameraDown && size_t(tmp->X + 0.5) >= CameraLeft && size_t(tmp->X + 0.5) <= CameraRight)
-				V_CloudPoints[size_t(tmp->Y+0.5) - CameraUp][size_t(tmp->X+0.5) - CameraLeft].push_back(*tmp);
+			int tmpY = int((tmp->Y * 1000 - CameraDown)/CLOUDRESOLUTION + 0.5);
+			int tmpX = int((tmp->X * 1000 - CameraLeft) / CLOUDRESOLUTION + 0.5);
+			if (tmpY < CloudHeight && tmpY >= 0 && tmpX >= 0 && tmpX < CloudWidth)
+			{
+				V_CloudPoints[tmpY][tmpX].push_back(*tmp);
+				MinDepth = min(MinDepth, tmp->Z);
+				MaxDepth = max(MaxDepth, tmp->Z);
+			}
 
 		}
 	}
-	cv::Mat CameraImg(CameraDown - CameraUp + 1, CameraRight - CameraLeft + 1, CV_16UC1);
-	for (size_t i = 0; i < CameraDown - CameraUp + 1; i++)
+	cv::Mat CameraImg(CloudHeight, CloudWidth, CV_8UC1);
+	std::vector<std::pair<size_t, size_t> > NoCloudPoints;
+	for (size_t i = 0; i < CloudHeight; i++)
 	{
-		for (size_t j = 0; j < CameraRight - CameraLeft + 1; j++)
+		for (size_t j = 0; j < CloudWidth; j++)
 		{
 			//没有点怎么办？
 			//深度精度这里设定为0.1mm，显示数值单位也是0.1mm
-			float sum = std::accumulate(V_CloudPoints.begin(), V_CloudPoints.end(), 0);
-			float size = V_CloudPoints[i][j].size();
+			float sum = 0;
+			float size = V_CloudPoints[CloudHeight - 1 - i][j].size();
+			for (size_t k = 0; k < size; k++)
+				sum += V_CloudPoints[CloudHeight - 1 - i][j][k].Z;
 			if (size > 0)
-				CameraImg.at<UINT16> = UINT16(sum / size * 10000 + 1);
+			{
+				CameraImg.at<UINT8>(i, j) = UINT8((sum / size - MinDepth)/(MaxDepth-MinDepth)*255);
+			}
 			else
-				CameraImg.at<UINT16> = 0;
+			{
+				CameraImg.at<UINT8>(i, j) = 0;
+				NoCloudPoints.push_back(std::make_pair(i, j));
+			}
+		}
+	}
+
+	for (size_t i = 0; i < NoCloudPoints.size(); i++)
+	{
+		unsigned int Len = 1;
+		unsigned int Count = 0;
+		unsigned int Sum = 0;
+		size_t x, y;
+		while (Len < CloudHeight&&Len < CloudWidth)
+		{
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first ;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first ;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			if (Count != 0)
+			{
+				CameraImg.at<UINT8>(NoCloudPoints[i].first, NoCloudPoints[i].second) = (UINT8)(Sum / Count);
+				break;
+			}
+			Len++;
 		}
 	}
 	CameraImg.copyTo(*Graph->CloudPointsImg);
@@ -345,6 +462,19 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 	posUR.Ry = 0;
 	posUR.Rz = posColor.theta + ANGLEBIAS;														//Anglebias is calibrated or learn by nerual network.
 	return GT_RES_OK;
+}
+
+GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, unsigned int &Cloudx, unsigned int &Cloudy)
+{
+	CameraSpacePoint Camerapos;
+	GT_RES res = Colorpos2Camerapos(Colorpos, Camerapos);
+	if (res != GT_RES_OK)
+	{
+		return res;
+	}
+	Cloudx = (unsigned int)((Camerapos.X * 1000 - m_CloudWidthBias) / CLOUDRESOLUTION + 0.5);
+	Cloudy = (unsigned int)((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5);
+	return res;
 }
 
 GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSpacePoint &Camerapos)

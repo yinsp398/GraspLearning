@@ -377,7 +377,7 @@ bool ResetPos()
 	return MovetoPos(pos);
 }
 //测试存储多幅图片，深度和彩色
-bool TestSaveMoreThanOneImage()
+/*bool TestSaveMoreThanOneImage()
 {
 	GT_RES res;
 
@@ -387,7 +387,6 @@ bool TestSaveMoreThanOneImage()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-	m_pGraph->CameraPos = new CameraSpacePoint[DEPTHWIDTH*DEPTHHEIGHT];
 	//Get the Kinect image(Color & depth & depth in color frame)
 
 	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
@@ -436,7 +435,7 @@ bool TestSaveMoreThanOneImage()
 	std::cout << "Kinect can save more than one image" << std::endl;
 
 	return true;
-}
+}*/
 //测试进行Robot和Camera坐标系校准
 bool TestCalibration()
 {
@@ -576,8 +575,18 @@ bool TestShowImage()
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
 	cv::imshow("depth", img(rect));
 
+	CameraSpacePoint Camerapos;
+	ColorSpacePoint Colorpos;
+	Colorpos.X = pos.x;
+	Colorpos.Y = pos.y;
+	m_pKinect->Colorpos2Camerapos(Colorpos,Camerapos);
+
+	cv::Rect rect2((Camerapos.X * 1000 + 259) / CLOUDRESOLUTION - 25, (Camerapos.Y * 1000 + 310) / CLOUDRESOLUTION - 25, 50, 50);
+	cv::Mat SubCloudpoints = (*(m_pGraph->CloudPointsImg))(rect2);
+
+	cv::imwrite("CloudPoints.jpg",(*(m_pGraph->CloudPointsImg))(rect2));
 	cv::namedWindow("CloudPoints", CV_WINDOW_AUTOSIZE);
-	cv::imshow("CloudPoints", *(m_pGraph->CloudPointsImg));
+	cv::imshow("CloudPoints", (*(m_pGraph->CloudPointsImg)));
 
 	cv::waitKey(0);
 	return true;
@@ -716,6 +725,8 @@ bool TestKinectDepthUncertainty()
 	std::vector<UINT16> DepthMax(DEPTHWIDTH*DEPTHHEIGHT, 0);
 	std::vector<UINT16> DepthMin(DEPTHWIDTH*DEPTHHEIGHT, 0-1);
 	cv::Mat ShowUnCertainty(DEPTHHEIGHT,DEPTHWIDTH,CV_16UC1);
+	cv::Mat AveDepth(DEPTHHEIGHT, DEPTHWIDTH, CV_8UC1);
+	cv::Mat DepthImg(DEPTHHEIGHT, DEPTHWIDTH, CV_8UC1);
 	DepthPoints.resize(10);
 	for (size_t i = 0; i < 10; i++)
 	{
@@ -737,6 +748,7 @@ bool TestKinectDepthUncertainty()
 			DepthMin[j] = min(DepthPoints[i][j], DepthMin[j]);
 		}
 	}
+
 	for (size_t i = 0; i < DEPTHHEIGHT; i++)
 	{
 		for (size_t j = 0; j < DEPTHWIDTH; j++)
@@ -746,24 +758,32 @@ bool TestKinectDepthUncertainty()
 				ShowUnCertainty.at<UINT16>(i, j) = 0;
 			else if (tmp<3)
 				ShowUnCertainty.at<UINT16>(i, j) = 0xfff;
-			else if (tmp<10)
+			else if (tmp<5)
 				ShowUnCertainty.at<UINT16>(i, j) = 0x3fff;
-			else if (tmp<50)
+			else if (tmp<10)
 				ShowUnCertainty.at<UINT16>(i, j) = 0xffff;
 			else
 				ShowUnCertainty.at<UINT16>(i, j) = 0xffff;
-
+			AveDepth.at<uchar>(i, j) = (uchar)((UINT16)DepthSum[i*DEPTHWIDTH + j] %256);
+			DepthImg.at<uchar>(i, j) = (uchar)(DepthPoints[0][i*DEPTHWIDTH + j] % 256);
 		}
 	}
+	cv::namedWindow("depthmean", CV_WINDOW_NORMAL);
+	cv::imshow("depthmean", AveDepth);
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
-	cv::imshow("depth", ShowUnCertainty);
+	cv::imshow("depth", DepthImg);
+	cv::namedWindow("uncertainty", CV_WINDOW_NORMAL);
+	cv::imshow("uncertainty", ShowUnCertainty);
 	cv::waitKey(0);
 	return true;
 	
 }
+
+
 int main()
 {
 	//TestSaveMoreThanOneImage();
+	//TestShowImage();
 	TestKinectDepthUncertainty();
     return 0;
 }

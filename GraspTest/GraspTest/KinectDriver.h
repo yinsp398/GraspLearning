@@ -24,6 +24,8 @@ private:
 	UINT16				*		m_pDepthImage = NULL;								//存储当前深度图像（用于进行坐标系转换）
 	CameraSpacePoint	*		m_pColorInCameraSpace = NULL;						//彩色图像位置到相机空间的转换矩阵
 	DepthSpacePoint		*		m_pColorInDepthSpace = NULL;						//彩色图像位置到深度空间的转换矩阵
+	int							m_CloudWidthBias;									//点云图的相机空间下的宽度起点位置,单位mm
+	int							m_CloudHeightBias;									//点云图的相机空间下的高度起点位置
 public:
 
 	KinectDriver();
@@ -52,6 +54,8 @@ public:
 
 	//获取深度图像
 	GT_RES	GetDepthImage(UINT16 *DepthImg);
+	//从彩色位置给出点云图中位置
+	GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, unsigned int &Cloudx, unsigned int &Cloudy);
 
 private:
 

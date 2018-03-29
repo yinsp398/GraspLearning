@@ -72,6 +72,7 @@ typedef struct _CameraSpacePoint CameraSpacePoint;
 
 #define		COLORFORMAT						CV_8UC1						//图像在cv mat中的存储格式，8位，一个通道的灰度图
 #define		DEPTHFORMAT						CV_16UC1					//深度图像在cv::mat中的存储格式，16位，一个通道的灰度图
+#define		CLOUDRESOLUTION					2							//描述了点云图的分辨率精度，这里单位是mm/piexl					
 
 struct GraspPose
 {
