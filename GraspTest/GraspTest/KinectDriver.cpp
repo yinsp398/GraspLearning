@@ -207,12 +207,13 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		{
 			DepthSum[j] += (float)(DepthImg[j]) / DEPTHMEANCNT;
 		}
+		Sleep(100);
 	}
 	for (int j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
 	{
 		DepthImg[j] = (UINT16)(DepthImg[j] + 0.5);
 	}
-
+	/*
 	res = DepthConvertMat(DepthImg, DEPTHWIDTH, DEPTHHEIGHT, Graph->DepthImg);
 	if (res != GT_RES_OK)
 	{
@@ -220,7 +221,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]ColorImg;
 		return res;
 	}
-
+	*/
 	//Get CloudPointsImg
 	//Get CameraSpacePoint map to Colorframe
 	if (m_pColorInCameraSpace)
@@ -253,14 +254,13 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	CameraDown = (int)(max(LeftDown->Y, RightDown->Y) * 1000+1);
 	m_CloudHeightBias = CameraDown;
 	m_CloudWidthBias = CameraLeft;
-	unsigned int CloudHeight, CloudWidth;
-	CloudHeight = (CameraUp - CameraDown) / CLOUDRESOLUTION;
-	CloudWidth = (CameraRight - CameraLeft) / CLOUDRESOLUTION;
+	m_CloudHeight = (CameraUp - CameraDown) / CLOUDRESOLUTION;
+	m_CloudWidth = (CameraRight - CameraLeft) / CLOUDRESOLUTION;
 	std::vector<std::vector<std::vector<CameraSpacePoint> > > V_CloudPoints;
-	V_CloudPoints.resize(CloudHeight);
-	for (size_t i = 0; i < CloudHeight; i++)
+	V_CloudPoints.resize(m_CloudHeight);
+	for (size_t i = 0; i < m_CloudHeight; i++)
 	{
-		V_CloudPoints[i].resize(CloudWidth);
+		V_CloudPoints[i].resize(m_CloudWidth);
 	}
 	float MinDepth = FLT_MAX, MaxDepth = -FLT_MAX;
 	for (size_t i = ColorUp; i <= ColorDown; i++)
@@ -270,7 +270,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			CameraSpacePoint *tmp = &m_pColorInCameraSpace[i*COLORWIDTH + j];
 			int tmpY = int((tmp->Y * 1000 - CameraDown)/CLOUDRESOLUTION + 0.5);
 			int tmpX = int((tmp->X * 1000 - CameraLeft) / CLOUDRESOLUTION + 0.5);
-			if (tmpY < CloudHeight && tmpY >= 0 && tmpX >= 0 && tmpX < CloudWidth)
+			if (tmpY < m_CloudHeight && tmpY >= 0 && tmpX >= 0 && tmpX < m_CloudWidth)
 			{
 				V_CloudPoints[tmpY][tmpX].push_back(*tmp);
 				MinDepth = min(MinDepth, tmp->Z);
@@ -279,16 +279,16 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 
 		}
 	}
-	cv::Mat CameraImg(CloudHeight, CloudWidth, CV_8UC1);
+	cv::Mat CameraImg(m_CloudHeight, m_CloudWidth, CV_8UC1);
 	std::vector<std::pair<size_t, size_t> > NoCloudPoints;
-	for (size_t i = 0; i < CloudHeight; i++)
+	for (size_t i = 0; i < m_CloudHeight; i++)
 	{
-		for (size_t j = 0; j < CloudWidth; j++)
+		for (size_t j = 0; j < m_CloudWidth; j++)
 		{
 			float sum = 0;
-			float size = V_CloudPoints[CloudHeight - 1 - i][j].size();
+			float size = V_CloudPoints[m_CloudHeight - 1 - i][j].size();
 			for (size_t k = 0; k < size; k++)
-				sum += V_CloudPoints[CloudHeight - 1 - i][j][k].Z;
+				sum += V_CloudPoints[m_CloudHeight - 1 - i][j][k].Z;
 			if (size > 0)
 			{		//Map the Z range of CameraSpace pos to 0~254 range
 				CameraImg.at<UINT8>(i, j) = UINT8((sum / size - MinDepth)/(MaxDepth-MinDepth)*255);
@@ -308,11 +308,11 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		unsigned int Count = 0;
 		unsigned int Sum = 0;
 		size_t x, y;
-		while (Len < CloudHeight&&Len < CloudWidth)
+		while (Len < m_CloudHeight&&Len < m_CloudWidth)
 		{
 			x = NoCloudPoints[i].first - Len;
 			y = NoCloudPoints[i].second - Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -322,7 +322,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first - Len;
 			y = NoCloudPoints[i].second;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -332,7 +332,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first - Len;
 			y = NoCloudPoints[i].second + Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -342,7 +342,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first ;
 			y = NoCloudPoints[i].second - Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -352,7 +352,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first ;
 			y = NoCloudPoints[i].second + Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -362,7 +362,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first + Len;
 			y = NoCloudPoints[i].second - Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -372,7 +372,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first + Len;
 			y = NoCloudPoints[i].second;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -382,7 +382,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			}
 			x = NoCloudPoints[i].first + Len;
 			y = NoCloudPoints[i].second + Len;
-			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			if (x >= 0 && x < m_CloudHeight&&y >= 0 && y < m_CloudWidth)
 			{
 				if (CameraImg.at<UINT8>(x, y) != 0)
 				{
@@ -489,7 +489,7 @@ GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsig
 		return res;
 	}
 	Cloudx = (unsigned int)((Camerapos.X * 1000 - m_CloudWidthBias) / CLOUDRESOLUTION + 0.5);
-	Cloudy = (unsigned int)((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5);
+	Cloudy = m_CloudHeight - 1 - (unsigned int)((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5);
 	return res;
 }
 

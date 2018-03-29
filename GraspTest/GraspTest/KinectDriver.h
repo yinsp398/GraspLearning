@@ -26,6 +26,8 @@ private:
 	DepthSpacePoint		*		m_pColorInDepthSpace = NULL;						//彩色图像位置到深度空间的转换矩阵
 	int							m_CloudWidthBias;									//点云图的相机空间下的宽度起点位置,单位mm
 	int							m_CloudHeightBias;									//点云图的相机空间下的高度起点位置
+	unsigned int				m_CloudHeight;										//当前点云图的高度大小
+	unsigned int				m_CloudWidth;										//当前点云图的宽度
 public:
 
 	KinectDriver();
