@@ -3,6 +3,7 @@
 #include <utils.h>
 #include <opencv2\imgproc.hpp>
 #include <Kinect.h>
+#include <numeric>
 #include <stdio.h>
 
 
@@ -166,11 +167,6 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]m_pDepthImage;
 		m_pDepthImage = NULL;
 	}
-	if (m_pColorInCameraSpace)
-	{
-		delete[]m_pColorInCameraSpace;
-		m_pColorInCameraSpace = NULL;
-	}
 	if (m_pColorInDepthSpace)
 	{
 		delete[]m_pColorInDepthSpace;
@@ -210,12 +206,70 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]ColorImg;
 		return res;
 	}
-	HRESULT hr = m_pCoordinateMapper->MapDepthFrameToCameraSpace(DEPTHWIDTH*DEPTHHEIGHT, DepthImg, DEPTHWIDTH*DEPTHHEIGHT, Graph->CameraPos);
+
+	//Get CloudPointsImg
+	//Get CameraSpacePoint map to Colorframe
+	if (m_pColorInCameraSpace)
+	{
+		delete[]m_pColorInCameraSpace;
+		m_pColorInCameraSpace = NULL;
+	}
+	m_pColorInCameraSpace = new CameraSpacePoint[COLORHEIGHT*COLORWIDTH];
+	HRESULT hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(DEPTHWIDTH*DEPTHHEIGHT, DepthImg, COLORWIDTH*COLORHEIGHT, m_pColorInCameraSpace);
 	if (FAILED(hr))
 	{
-		printf("Mat depth frame to CameraSpace failed!\n");
+		printf("MapColorFrameToCameraSpace failed!\n");
 		return GT_RES_ERROR;
 	}
+	//Get point x and y of edge
+	size_t ColorLeft, ColorRight, ColorUp, ColorDown;
+	ColorLeft = max(COLORSPACELEFT - COLORGRAPHWIDTH, 0);
+	ColorRight = min(COLORSPACERIGHT + COLORGRAPHWIDTH, COLORWIDTH - 1);
+	ColorUp = max(COLORSPACEUP - COLORGRAPHHEIGHT, 0);
+	ColorDown = min(COLORSPACEDOWN + COLORGRAPHHEIGHT, COLORHEIGHT - 1);
+	CameraSpacePoint *LeftUp, *LeftDown, *RightUp, *RightDown;
+	LeftUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorLeft];
+	LeftDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorLeft];
+	RightUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorRight];
+	RightDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorRight];
+	unsigned int CameraLeft, CameraRight, CameraUp, CameraDown;
+	CameraLeft = (unsigned int)(max(LeftUp->X, LeftDown->X)*1000+1);
+	CameraRight = (unsigned int)(min(RightUp->X, RightDown->X) * 1000);
+	CameraUp = (unsigned int)(max(LeftUp->Y, RightUp->Y) * 1000+1);
+	CameraDown = (unsigned int)(min(LeftDown->Y, RightDown->Y) * 1000);
+
+	std::vector<std::vector<std::vector<CameraSpacePoint> > > V_CloudPoints;
+	V_CloudPoints.resize(CameraDown - CameraUp + 1);
+	for (size_t i = 0; i < CameraDown - CameraUp + 1; i++)
+	{
+		V_CloudPoints[i].resize(CameraRight - CameraLeft + 1);
+	}
+	for (size_t i = ColorUp; i <= ColorDown; i++)
+	{
+		for (size_t j = ColorLeft; j <= ColorRight; j++)
+		{
+			CameraSpacePoint *tmp = &m_pColorInCameraSpace[i*COLORWIDTH + j];
+			if (size_t(tmp->Y+0.5) >= CameraUp && size_t(tmp->Y + 0.5)  <=CameraDown && size_t(tmp->X + 0.5) >= CameraLeft && size_t(tmp->X + 0.5) <= CameraRight)
+				V_CloudPoints[size_t(tmp->Y+0.5) - CameraUp][size_t(tmp->X+0.5) - CameraLeft].push_back(*tmp);
+
+		}
+	}
+	cv::Mat CameraImg(CameraDown - CameraUp + 1, CameraRight - CameraLeft + 1, CV_16UC1);
+	for (size_t i = 0; i < CameraDown - CameraUp + 1; i++)
+	{
+		for (size_t j = 0; j < CameraRight - CameraLeft + 1; j++)
+		{
+			//没有点怎么办？
+			//深度精度这里设定为0.1mm，显示数值单位也是0.1mm
+			float sum = std::accumulate(V_CloudPoints.begin(), V_CloudPoints.end(), 0);
+			float size = V_CloudPoints[i][j].size();
+			if (size > 0)
+				CameraImg.at<UINT16> = UINT16(sum / size * 10000 + 1);
+			else
+				CameraImg.at<UINT16> = 0;
+		}
+	}
+	CameraImg.copyTo(*Graph->CloudPointsImg);
 	delete[]ColorImg;
 	return res;
 }

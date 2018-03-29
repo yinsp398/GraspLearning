@@ -84,7 +84,7 @@ struct Graphics
 {
 	cv::Mat *ColorImg;
 	cv::Mat *DepthImg;
-	CameraSpacePoint *CameraPos;
+	cv::Mat *CloudPointsImg;
 };
 
 

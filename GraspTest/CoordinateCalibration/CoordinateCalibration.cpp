@@ -145,6 +145,7 @@ bool Init()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->CloudPointsImg = new cv::Mat;
 	return true;
 }
 
@@ -575,10 +576,10 @@ bool TestShowImage()
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
 	cv::imshow("depth", img(rect));
 
+	cv::namedWindow("CloudPoints", CV_WINDOW_AUTOSIZE);
+	cv::imshow("CloudPoints", *(m_pGraph->CloudPointsImg));
 
 	cv::waitKey(0);
-
-
 	return true;
 }
 //²âÊÔ×ª»»¾ØÕó¾«¶È
