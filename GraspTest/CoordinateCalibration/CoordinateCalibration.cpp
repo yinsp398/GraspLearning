@@ -703,7 +703,7 @@ bool TestErrorUR5(int Num)
 	std::cout << "max:" << max.ToString() << std::endl;
 	return true;
 }
-
+//测试Kinect的深度不确定度
 bool TestKinectDepthUncertainty()
 {
 	GT_RES res;
@@ -740,7 +740,18 @@ bool TestKinectDepthUncertainty()
 	{
 		for (size_t j = 0; j < DEPTHWIDTH; j++)
 		{
-			ShowUnCertainty.at<UINT16>(i, j) = DepthMax[i*DEPTHWIDTH + j] - DepthMin[i*DEPTHWIDTH + j];
+			UINT16 tmp = DepthMax[i*DEPTHWIDTH + j] - DepthMin[i*DEPTHWIDTH + j];
+			if (tmp == 0)
+				ShowUnCertainty.at<UINT16>(i, j) = 0;
+			else if (tmp<3)
+				ShowUnCertainty.at<UINT16>(i, j) = 0xfff;
+			else if (tmp<10)
+				ShowUnCertainty.at<UINT16>(i, j) = 0x3fff;
+			else if (tmp<50)
+				ShowUnCertainty.at<UINT16>(i, j) = 0xffff;
+			else
+				ShowUnCertainty.at<UINT16>(i, j) = 0xffff;
+
 		}
 	}
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
