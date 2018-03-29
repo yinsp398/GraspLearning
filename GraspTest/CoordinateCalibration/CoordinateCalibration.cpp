@@ -148,6 +148,7 @@ bool Init()
 	
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	m_pGraph->CloudPointsImg = new cv::Mat;
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
 	return true;
 }

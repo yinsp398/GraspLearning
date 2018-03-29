@@ -21,9 +21,9 @@ NN::NN(	const std::string & model_file,
 	m_pUpdateTime = new time_t;
 	*m_pUpdateTime = time(NULL);
 	m_pGraph = new Graphics;
-	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
+	//m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
-
+	m_pGraph->CloudPointsImg = new cv::Mat;
 }
 
 NN::~NN()
@@ -33,7 +33,7 @@ NN::~NN()
 	delete m_ppos;
 	delete m_pposes;
 	delete m_pUpdateTime;
-	delete m_pGraph->DepthImg;
+	//delete m_pGraph->DepthImg;
 	delete m_pGraph->ColorImg;
 	delete m_pGraph;
 
@@ -55,10 +55,12 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 		return GT_RES_ERROR;
 	}
 	graph->ColorImg->copyTo(*(m_pGraph->ColorImg));
+	graph->CloudPointsImg->copyTo(*(m_pGraph->CloudPointsImg));
 	//memcpy(m_pGraph->DepthImg, graph->DepthImg, sizeof(graph->DepthImg));
 	//convert depth image from 16bit to 8bit , 0~255 
-	int nWidth = graph->DepthImg->size.p[1];
-	int nHeight = graph->DepthImg->size.p[0];
+	/*
+	int nWidth = graph->DepthImg->cols;
+	int nHeight = graph->DepthImg->rows;
 	for (size_t i = 0; i < nHeight; i++)
 	{
 		for (size_t j = 0; j < nWidth; j++)
@@ -66,6 +68,7 @@ GT_RES	NN::UpdateGraphics(Graphics * graph)
 			m_pGraph->DepthImg->at<uchar>(i, j) = (uchar)(graph->DepthImg->at<UINT16>(i, j) % 256);
 		}
 	}
+	*/
 	return GT_RES_OK;
 }
 
@@ -86,29 +89,29 @@ GT_RES	NN::NNRun()
 	}
 	//这里先采用最简单直接的方式，直接暴力找，之后调通了再修改优化这里
 	//直接使用彩色图像，之后再考虑深度图像
-	Graphics * graph = new Graphics;
-	graph->ColorImg = new cv::Mat(COLORHEIGHT,COLORWIDTH,COLORFORMAT);
-	graph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
+	Graphics * Subgraph = new Graphics;
+	Subgraph->ColorImg = new cv::Mat(COLORGRAPHHEIGHT,COLORGRAPHWIDTH,COLORFORMAT);
+	Subgraph->CloudPointsImg = new cv::Mat(CLOUDGRAPHHEIGHT, CLOUDGRAPHWIDTH, COLORFORMAT);
 	GraspPose pos;
 	for (int i = 0; i < 50; i++)
 	{
 		if ((res = GetRandomPose(&pos)) != GT_RES_OK)
 		{
 			printf("Get random pose failed with error: %02x.\n", res);
-			delete graph->ColorImg;
-			delete graph->DepthImg;
-			delete graph;
+			delete Subgraph->ColorImg;
+			delete Subgraph->CloudPointsImg;
+			delete Subgraph;
 			return res;
 		}
-		if ((res = GetSubImage(&pos, m_pGraph, graph,false,false,1)) != GT_RES_OK)
+		if ((res = GetSubImage(&pos, m_pGraph, Subgraph,false,false,1)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
-			delete graph->ColorImg;
-			delete graph->DepthImg;
-			delete graph;
+			delete Subgraph->ColorImg;
+			delete Subgraph->CloudPointsImg;
+			delete Subgraph;
 			return res;
 		}
-		std::vector<float> Vec_Tmp = m_pClassifier->Predict(*(graph->ColorImg), *(graph->DepthImg));
+		std::vector<float> Vec_Tmp = m_pClassifier->Predict(*(Subgraph->ColorImg), *(Subgraph->CloudPointsImg));
 		std::pair<GraspPose, float> Pair_tmp = std::make_pair(pos, Vec_Tmp[0]);
 		m_pposes->push_back(Pair_tmp);
 		if (m_ppos->second < Vec_Tmp[0])
@@ -117,9 +120,9 @@ GT_RES	NN::NNRun()
 			m_ppos->first = pos;
 		}
 	}
-	delete graph->ColorImg;
-	delete graph->DepthImg;
-	delete graph;
+	delete Subgraph->ColorImg;
+	delete Subgraph->CloudPointsImg;
+	delete Subgraph;
 	return GT_RES_OK;
 }
 
@@ -158,21 +161,21 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 
 	if (m_ppos)
 	{
-		Graphics * graph = new Graphics;
-		graph->ColorImg = new cv::Mat(COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORFORMAT);
-		graph->DepthImg = new cv::Mat(DEPTHGRAPHHEIGHT, DEPTHGRAPHWIDTH, COLORFORMAT);
+		Graphics * Subgraph = new Graphics;
+		Subgraph->ColorImg = new cv::Mat(COLORGRAPHHEIGHT, COLORGRAPHWIDTH, COLORFORMAT);
+		Subgraph->CloudPointsImg = new cv::Mat(CLOUDGRAPHHEIGHT, CLOUDGRAPHWIDTH, COLORFORMAT);
 		//save the subimage about the m_ppos to file
-		if ((res = GetSubImage(&(m_ppos->first), m_pGraph, graph, false, false, 1)) != GT_RES_OK)
+		if ((res = GetSubImage(&(m_ppos->first), m_pGraph, Subgraph, false, false, 1)) != GT_RES_OK)
 		{
 			printf("Get Subimage failed with error: %02x.\n", res);
-			delete graph->ColorImg;
-			delete graph->DepthImg;
-			delete graph;
+			delete Subgraph->ColorImg;
+			delete Subgraph->CloudPointsImg;
+			delete Subgraph;
 			return res;
 		}
-		string FileNameColor,FileNameDepth;
+		string FileNameColor,FileNameCloudPoints;
 		FileNameColor = IMAGEPATH;
-		FileNameDepth = DEPTHPATH;
+		FileNameCloudPoints = CLOUDPATH;
 		std::stringstream ss;
 		string str_tmp;
 		ss << ImgCnt;
@@ -183,10 +186,10 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 		}
 		FileNameColor += str_tmp;
 		FileNameColor += ".jpg";
-		FileNameDepth += str_tmp;
-		FileNameDepth += ".jpg";
-		cv::imwrite(FileNameColor, *(graph->ColorImg));
-		cv::imwrite(FileNameDepth, *(graph->DepthImg));
+		FileNameCloudPoints += str_tmp;
+		FileNameCloudPoints += ".jpg";
+		cv::imwrite(FileNameColor, *(Subgraph->ColorImg));
+		cv::imwrite(FileNameCloudPoints, *(Subgraph->CloudPointsImg));
 		
 		//save the predicted possibility to file
 		std::ofstream out;
@@ -197,9 +200,9 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
 		m_pposes->clear();
 
-		delete graph->ColorImg;
-		delete graph->DepthImg;
-		delete graph;
+		delete Subgraph->ColorImg;
+		delete Subgraph->CloudPointsImg;
+		delete Subgraph;
 		return GT_RES_OK;
 	}
 	else
@@ -218,17 +221,17 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		return GT_RES_ERROR;
 	}
 	//确保二者尺寸一致
-	if (GraphIn->ColorImg->rows != COLORHEIGHT || GraphIn->ColorImg->cols != COLORWIDTH || GraphIn->DepthImg->rows != DEPTHHEIGHT || GraphIn->DepthImg->cols != DEPTHWIDTH)
+	if (GraphIn->ColorImg->rows != COLORHEIGHT || GraphIn->ColorImg->cols != COLORWIDTH)
 	{
 		printf("The size of GraphIn is not right.\n");
 		return GT_RES_ERROR;
 	}
-	if (GraphOut->ColorImg->rows != COLORGRAPHHEIGHT || GraphOut->ColorImg->cols != COLORGRAPHWIDTH || GraphOut->DepthImg->rows != DEPTHGRAPHHEIGHT || GraphOut->DepthImg->cols != DEPTHGRAPHWIDTH)
+	if (GraphOut->ColorImg->rows != COLORGRAPHHEIGHT || GraphOut->ColorImg->cols != COLORGRAPHWIDTH || GraphOut->CloudPointsImg->rows != CLOUDGRAPHHEIGHT || GraphOut->CloudPointsImg->cols != CLOUDGRAPHWIDTH)
 	{
 		printf("The size of GraphOut is not right.\n");
 		return GT_RES_ERROR;
 	}
-	if (GraphIn->ColorImg->type() != GraphOut->ColorImg->type() || GraphIn->DepthImg->type() != GraphOut->DepthImg->type())
+	if (GraphIn->ColorImg->type() != GraphOut->ColorImg->type() || GraphIn->CloudPointsImg->type() != GraphOut->CloudPointsImg->type())
 	{
 		printf("The type of GraphIn and GraphOut is not consistent.\n");
 		return GT_RES_ERROR;
@@ -250,23 +253,18 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 		return GT_RES_ERROR;
 	}	
 	
-	float Dx, Dy;
-	GT_RES res = m_pKinect->Colorpos2Depthpos(pos->x, pos->y, Dx, Dy);
+	unsigned int Cloudx, Cloudy;
+	GT_RES res = m_pKinect->Colorpos2Cloudpos(pos->x, pos->y, Cloudx, Cloudy);
 	if (res != GT_RES_OK)
 	{
-		printf("Colorpos convert to Depthpos failed with error:%02x.\n", res);
+		printf("Colorpos convert to Cloudpos failed with error:%02x.\n", res);
 		return res;
-	}
-	else if (Dx<0 || Dx>=DEPTHWIDTH || Dy<0 || Dy>=DEPTHHEIGHT)
-	{
-		printf("depth image index is out of range.\n");
-		return GT_RES_ERROR;
 	}
 
 	cv::Point2f Center1(pos->x, pos->y);
-	cv::Point2f Center2(Dx, Dy);
+	cv::Point2f Center2(Cloudx, Cloudy);
 	cv::Mat *pMat1 = GraphIn->ColorImg;
-	cv::Mat *pMat2 = GraphIn->DepthImg;
+	cv::Mat *pMat2 = GraphIn->CloudPointsImg;
 	cv::Mat *pMat = NULL;
 
 	if (fabs(pos->theta) > 1e-5)
@@ -278,7 +276,7 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 
 		pMat = new cv::Mat;
 		cv::Mat RotationMat2 = cv::getRotationMatrix2D(Center2, pos->theta / PI * 180, COLORSCALE);
-		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(DEPTHWIDTH, DEPTHHEIGHT));
+		cv::warpAffine(*pMat2, *pMat, RotationMat2, cv::Size(GraphIn->CloudPointsImg->cols, GraphIn->CloudPointsImg->rows));
 		pMat2 = pMat;
 	}
 
@@ -291,7 +289,7 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	pMat1 = pMat;
 
 	pMat = new cv::Mat;
-	cv::Rect rect2(Dx - DEPTHGRAPHWIDTH / 2.0, Dy - DEPTHGRAPHHEIGHT / 2.0, DEPTHGRAPHWIDTH, DEPTHGRAPHHEIGHT);
+	cv::Rect rect2(Cloudx - CLOUDGRAPHWIDTH / 2.0, Cloudy - CLOUDGRAPHHEIGHT / 2.0, CLOUDGRAPHWIDTH, CLOUDGRAPHHEIGHT);
 	(*pMat2)(rect2).copyTo(*pMat);
 	if (fabs(pos->theta) > 1e-5)
 		delete pMat2;
@@ -325,12 +323,12 @@ GT_RES	NN::GetSubImage(GraspPose * const pos, Graphics* const GraphIn, Graphics 
 	if (flip)
 	{
 		cv::flip(*pMat1, *(GraphOut->ColorImg), 0);
-		cv::flip(*pMat2, *(GraphOut->DepthImg), 0);
+		cv::flip(*pMat2, *(GraphOut->CloudPointsImg), 0);
 	}
 	else
 	{
 		pMat1->copyTo(*(GraphOut->ColorImg));
-		pMat2->copyTo(*(GraphOut->DepthImg));
+		pMat2->copyTo(*(GraphOut->CloudPointsImg));
 	}
 	delete pMat1;
 	delete pMat2;

@@ -24,6 +24,8 @@ private:
 	UINT16				*		m_pDepthImage = NULL;								//存储当前深度图像（用于进行坐标系转换）
 	CameraSpacePoint	*		m_pColorInCameraSpace = NULL;						//彩色图像位置到相机空间的转换矩阵
 	DepthSpacePoint		*		m_pColorInDepthSpace = NULL;						//彩色图像位置到深度空间的转换矩阵
+	int							m_CloudWidthBias;									//点云图的相机空间下的宽度起点位置,单位mm
+	int							m_CloudHeightBias;									//点云图的相机空间下的高度起点位置
 public:
 
 	KinectDriver();
@@ -50,13 +52,16 @@ public:
 	//从彩色图像中的位置得到机器人实际的抓取位置和姿态(x, y, theta)->(x, y, z, Rx, Ry, Rz)
 	GT_RES	ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR);
 
+	//获取深度图像
+	GT_RES	GetDepthImage(UINT16 *DepthImg);
+	//从彩色位置给出点云图中位置
+	GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsigned int ColorposY, unsigned int &Cloudx, unsigned int &Cloudy);
+
 private:
 
 	//获取彩色图像
 	GT_RES	GetColorImage(RGBQUAD *ColorImg);
 
-	//获取深度图像
-	GT_RES	GetDepthImage(UINT16 *DepthImg);
 
 	//转换深度图到Mat格式
 	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);

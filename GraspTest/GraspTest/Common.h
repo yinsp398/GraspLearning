@@ -45,6 +45,8 @@
 #define		COLORGRAPHHEIGHT				100							//局部彩色图像高度
 #define		DEPTHGRAPHWIDTH					50							//局部深度图像宽度
 #define		DEPTHGRAPHHEIGHT				50							//局部深度图像高度
+#define		CLOUDGRAPHWIDTH					50							//局部点云图像宽度
+#define		CLOUDGRAPHHEIGHT				50							//局部点云图像高度
 
 
 #define		BATCHSIZE						30							//一组数据个数
@@ -52,6 +54,7 @@
 
 #define		IMAGEPATH						"../imageset/Color/"		//用于存储图像数据的路径
 #define		DEPTHPATH						"../imageset/Depth/"		//用于存储深度数据的路径
+#define		CLOUDPATH						"../imageset/CloudPoints/"		//用于存储深度数据的路径
 #define		PREDICTPATH						"../imageset/Predict.txt"	//预测每次抓取的成功率的文件路径
 #define		RESULTPATH						"../imageset/Result.txt"	//每次抓取结果的文件路径
 
@@ -71,6 +74,9 @@
 
 #define		COLORFORMAT						CV_8UC1						//图像在cv mat中的存储格式，8位，一个通道的灰度图
 #define		DEPTHFORMAT						CV_16UC1					//深度图像在cv::mat中的存储格式，16位，一个通道的灰度图
+#define		CLOUDFORMAT						CV_8UC1						//点云图像在cv mat 中的存储格式，8位，一个通道的灰度图
+#define		CLOUDRESOLUTION					2							//点云图的分辨率精度，单位mm/pixel
+#define		DEPTHMEANCNT					10							//深度图取平均的图片张数
 
 struct GraspPose
 {
@@ -83,6 +89,7 @@ struct Graphics
 {
 	cv::Mat *ColorImg;
 	cv::Mat *DepthImg;
+	cv::Mat *CloudPointsImg;
 };
 
 

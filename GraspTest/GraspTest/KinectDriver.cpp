@@ -3,7 +3,8 @@
 #include <utils.h>
 #include <opencv2\imgproc.hpp>
 #include <Kinect.h>
-#include <iostream>
+#include <numeric>
+#include <utility>
 #include <stdio.h>
 
 
@@ -167,11 +168,6 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]m_pDepthImage;
 		m_pDepthImage = NULL;
 	}
-	if (m_pColorInCameraSpace)
-	{
-		delete[]m_pColorInCameraSpace;
-		m_pColorInCameraSpace = NULL;
-	}
 	if (m_pColorInDepthSpace)
 	{
 		delete[]m_pColorInDepthSpace;
@@ -179,6 +175,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	}
 	m_pDepthImage = new UINT16[DEPTHWIDTH*DEPTHHEIGHT];
 	UINT16 *DepthImg = m_pDepthImage;
+	float *DepthSum = new float[DEPTHWIDTH*DEPTHHEIGHT];
 	cv::Mat ColorMat(COLORHEIGHT, COLORWIDTH, CV_8UC3);
 	//Get and deal Color Img
 	res = GetColorImage(ColorImg);
@@ -196,14 +193,26 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		return res;
 	}
 	cvtColor(ColorMat, *(Graph->ColorImg), CV_RGB2GRAY);
-	//Get and deal DepthImg
-	res = GetDepthImage(DepthImg);
-	if (res != GT_RES_OK)
+	//Get several DepthImg and get average
+	for (int i = 0; i < DEPTHMEANCNT; i++)
 	{
-		printf("GetDepthImg failed!\n");
-		delete[]ColorImg;
-		return res;
+		res = GetDepthImage(DepthImg);
+		if (res != GT_RES_OK)
+		{
+			printf("GetDepthImg failed!\n");
+			delete[]ColorImg;
+			return res;
+		}
+		for (int j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
+		{
+			DepthSum[j] += (float)(DepthImg[j]) / DEPTHMEANCNT;
+		}
 	}
+	for (int j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
+	{
+		DepthImg[j] = (UINT16)(DepthImg[j] + 0.5);
+	}
+
 	res = DepthConvertMat(DepthImg, DEPTHWIDTH, DEPTHHEIGHT, Graph->DepthImg);
 	if (res != GT_RES_OK)
 	{
@@ -211,6 +220,186 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		delete[]ColorImg;
 		return res;
 	}
+
+	//Get CloudPointsImg
+	//Get CameraSpacePoint map to Colorframe
+	if (m_pColorInCameraSpace)
+	{
+		delete[]m_pColorInCameraSpace;
+		m_pColorInCameraSpace = NULL;
+	}
+	m_pColorInCameraSpace = new CameraSpacePoint[COLORHEIGHT*COLORWIDTH];
+	HRESULT hr = m_pCoordinateMapper->MapColorFrameToCameraSpace(DEPTHWIDTH*DEPTHHEIGHT, DepthImg, COLORWIDTH*COLORHEIGHT, m_pColorInCameraSpace);
+	if (FAILED(hr))
+	{
+		printf("MapColorFrameToCameraSpace failed!\n");
+		return GT_RES_ERROR;
+	}
+	//Get point x and y of edge
+	size_t ColorLeft, ColorRight, ColorUp, ColorDown;
+	ColorLeft = max(COLORSPACELEFT - COLORGRAPHWIDTH, 0);
+	ColorRight = min(COLORSPACERIGHT + COLORGRAPHWIDTH, COLORWIDTH - 1);
+	ColorUp = max(COLORSPACEUP - COLORGRAPHHEIGHT, 0);
+	ColorDown = min(COLORSPACEDOWN + COLORGRAPHHEIGHT, COLORHEIGHT - 1);
+	CameraSpacePoint *LeftUp, *LeftDown, *RightUp, *RightDown;
+	LeftUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorLeft];
+	LeftDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorLeft];
+	RightUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorRight];
+	RightDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorRight];
+	int CameraLeft, CameraRight, CameraUp, CameraDown;
+	CameraLeft = (int)(max(LeftUp->X, LeftDown->X)*1000+1);
+	CameraRight = (int)(min(RightUp->X, RightDown->X) * 1000);
+	CameraUp = (int)(min(LeftUp->Y, RightUp->Y) * 1000);
+	CameraDown = (int)(max(LeftDown->Y, RightDown->Y) * 1000+1);
+	m_CloudHeightBias = CameraDown;
+	m_CloudWidthBias = CameraLeft;
+	unsigned int CloudHeight, CloudWidth;
+	CloudHeight = (CameraUp - CameraDown) / CLOUDRESOLUTION;
+	CloudWidth = (CameraRight - CameraLeft) / CLOUDRESOLUTION;
+	std::vector<std::vector<std::vector<CameraSpacePoint> > > V_CloudPoints;
+	V_CloudPoints.resize(CloudHeight);
+	for (size_t i = 0; i < CloudHeight; i++)
+	{
+		V_CloudPoints[i].resize(CloudWidth);
+	}
+	float MinDepth = FLT_MAX, MaxDepth = -FLT_MAX;
+	for (size_t i = ColorUp; i <= ColorDown; i++)
+	{
+		for (size_t j = ColorLeft; j <= ColorRight; j++)
+		{
+			CameraSpacePoint *tmp = &m_pColorInCameraSpace[i*COLORWIDTH + j];
+			int tmpY = int((tmp->Y * 1000 - CameraDown)/CLOUDRESOLUTION + 0.5);
+			int tmpX = int((tmp->X * 1000 - CameraLeft) / CLOUDRESOLUTION + 0.5);
+			if (tmpY < CloudHeight && tmpY >= 0 && tmpX >= 0 && tmpX < CloudWidth)
+			{
+				V_CloudPoints[tmpY][tmpX].push_back(*tmp);
+				MinDepth = min(MinDepth, tmp->Z);
+				MaxDepth = max(MaxDepth, tmp->Z);
+			}
+
+		}
+	}
+	cv::Mat CameraImg(CloudHeight, CloudWidth, CV_8UC1);
+	std::vector<std::pair<size_t, size_t> > NoCloudPoints;
+	for (size_t i = 0; i < CloudHeight; i++)
+	{
+		for (size_t j = 0; j < CloudWidth; j++)
+		{
+			float sum = 0;
+			float size = V_CloudPoints[CloudHeight - 1 - i][j].size();
+			for (size_t k = 0; k < size; k++)
+				sum += V_CloudPoints[CloudHeight - 1 - i][j][k].Z;
+			if (size > 0)
+			{		//Map the Z range of CameraSpace pos to 0~254 range
+				CameraImg.at<UINT8>(i, j) = UINT8((sum / size - MinDepth)/(MaxDepth-MinDepth)*255);
+			}
+			else
+			{		//If have no points , save it and wait to deal later.
+				CameraImg.at<UINT8>(i, j) = 0;
+				NoCloudPoints.push_back(std::make_pair(i, j));
+			}
+		}
+	}
+
+	for (size_t i = 0; i < NoCloudPoints.size(); i++)
+	{		//find the poses if it is Len distance far from the NoCLoudPoints[i] pos, and set the average of them as Z of the empty pos.
+			//If have no neighbor in Len distance ,Len++;
+		unsigned int Len = 1;
+		unsigned int Count = 0;
+		unsigned int Sum = 0;
+		size_t x, y;
+		while (Len < CloudHeight&&Len < CloudWidth)
+		{
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first - Len;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first ;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first ;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second - Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			x = NoCloudPoints[i].first + Len;
+			y = NoCloudPoints[i].second + Len;
+			if (x >= 0 && x < CloudHeight&&y >= 0 && y < CloudWidth)
+			{
+				if (CameraImg.at<UINT8>(x, y) != 0)
+				{
+					Sum += CameraImg.at<UINT8>(x, y);
+					Count++;
+				}
+			}
+			if (Count != 0)
+			{
+				CameraImg.at<UINT8>(NoCloudPoints[i].first, NoCloudPoints[i].second) = (UINT8)(Sum / Count);
+				break;
+			}
+			Len++;
+		}
+	}
+	//Notice we can change the size of cv::Mat in subprogram,so we dont set size and type of CloudPointsImg in MainProgram.
+	CameraImg.copyTo(*Graph->CloudPointsImg);
 	delete[]ColorImg;
 	return res;
 }
@@ -281,11 +470,27 @@ GT_RES	KinectDriver::ColorDepth2Robot(const GraspPose posColor, Pose3D &posUR)
 
 	posUR.x = MatUR.at<float>(0, 0);
 	posUR.y = MatUR.at<float>(1, 0);
-	posUR.z = MatUR.at<float>(2, 0) + 0.005;
+	posUR.z = MatUR.at<float>(2, 0)+0.005;
 	posUR.Rx = PI;																				//Default Robot TCP is towards down;
 	posUR.Ry = 0;
 	posUR.Rz = posColor.theta + ANGLEBIAS;														//Anglebias is calibrated or learn by nerual network.
 	return GT_RES_OK;
+}
+
+GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsigned int ColorposY, unsigned int &Cloudx, unsigned int &Cloudy)
+{
+	CameraSpacePoint Camerapos;
+	ColorSpacePoint Colorpos;
+	Colorpos.X = ColorposX;
+	Colorpos.Y = ColorposY;
+	GT_RES res = Colorpos2Camerapos(Colorpos, Camerapos);
+	if (res != GT_RES_OK)
+	{
+		return res;
+	}
+	Cloudx = (unsigned int)((Camerapos.X * 1000 - m_CloudWidthBias) / CLOUDRESOLUTION + 0.5);
+	Cloudy = (unsigned int)((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5);
+	return res;
 }
 
 GT_RES	KinectDriver::Colorpos2Camerapos(const ColorSpacePoint Colorpos, CameraSpacePoint &Camerapos)

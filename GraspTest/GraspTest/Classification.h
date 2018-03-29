@@ -25,7 +25,7 @@ public:
 		const string& trained_file,
 		const string& mean_file);
 	void Updatefile(const string& mean_file, const string& trained_file);
-	std::vector<float> Predict(const cv::Mat& colorimg, const cv::Mat& depthimg);
+	std::vector<float> Predict(const cv::Mat& colorimg, const cv::Mat& CloudPointsimg);
 private:
 	
 	void SetMean(const string& mean_file);
