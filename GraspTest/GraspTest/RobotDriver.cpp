@@ -76,7 +76,12 @@ GT_RES	RobotDriver::MoveGrasp(Pose3D *pos, bool *success)
 	Pose3D pos1,pos2;
 	GT_RES res;
 	pos1.Set(POSE1);
-	pos2.Set(POSE2);
+	pos2.Set(pos->x, pos->y, pos->z + 0.1, pos->Rx, pos->Ry, pos->Rz);
+	res = GripperOpen();
+	if (res != GT_RES_OK)
+	{
+		return res;
+	}
 	res = MovetoPose(&pos2);
 	if (res != GT_RES_OK)
 	{

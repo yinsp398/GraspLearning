@@ -262,7 +262,7 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	{
 		V_CloudPoints[i].resize(m_CloudWidth);
 	}
-	float MinDepth = FLT_MAX, MaxDepth = -FLT_MAX;
+	//float MinDepth = FLT_MAX, MaxDepth = -FLT_MAX;
 	for (size_t i = ColorUp; i <= ColorDown; i++)
 	{
 		for (size_t j = ColorLeft; j <= ColorRight; j++)
@@ -273,8 +273,8 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 			if (tmpY < m_CloudHeight && tmpY >= 0 && tmpX >= 0 && tmpX < m_CloudWidth)
 			{
 				V_CloudPoints[tmpY][tmpX].push_back(*tmp);
-				MinDepth = min(MinDepth, tmp->Z);
-				MaxDepth = max(MaxDepth, tmp->Z);
+				//MinDepth = min(MinDepth, tmp->Z);
+				//MaxDepth = max(MaxDepth, tmp->Z);
 			}
 
 		}
@@ -291,7 +291,8 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 				sum += V_CloudPoints[m_CloudHeight - 1 - i][j][k].Z;
 			if (size > 0)
 			{		//Map the Z range of CameraSpace pos to 0~254 range
-				CameraImg.at<UINT8>(i, j) = UINT8((sum / size - MinDepth)/(MaxDepth-MinDepth)*255);
+				//CameraImg.at<UINT8>(i, j) = UINT8((sum / size - MinDepth) / (MaxDepth - MinDepth) * 255);
+				CameraImg.at<UINT8>(i, j) = UINT8((sum / size - CLOUDDEPTHBIAS) * CLOUDDEPTHMUL * 1000);
 			}
 			else
 			{		//If have no points , save it and wait to deal later.

@@ -39,6 +39,28 @@ NN::~NN()
 
 }
 
+bool IsInLimits(GraspPose *pos)
+{
+	float len = COLORGRAPHHEIGHT;
+	if (pos->x + fabs(len*cos(pos->theta)) > COLORSPACERIGHT)
+	{
+		return false;
+	}
+	else if (pos->x - fabs(len*cos(pos->theta)) < COLORSPACELEFT)
+	{
+		return false;
+	}
+	else if (pos->y + len*sin(pos->theta) > COLORSPACEDOWN)
+	{
+		return false;
+	}
+	else if (pos->y - len*sin(pos->theta) < COLORSPACEUP)
+	{
+		return false;
+	}
+	return true;
+}
+
 //update Net parameter
 GT_RES	NN::UpdateParam(std::string trained_file, std::string mean_file)
 {
@@ -130,9 +152,11 @@ GT_RES	NN::NNRun()
 GT_RES	NN::GetRandomPose(GraspPose * pos)
 {
 	srand((unsigned)time(NULL));											//initialize the rand seed by time stamp
-	pos->x = rand() % (COLORSPACERIGHT - COLORSPACELEFT) + COLORSPACELEFT;
-	pos->y = rand() % (COLORSPACEDOWN - COLORSPACEUP) + COLORSPACEUP;
-	pos->theta = rand() / double(RAND_MAX) * PI;
+	do {
+		pos->x = rand() % (COLORSPACERIGHT - COLORSPACELEFT) + COLORSPACELEFT;
+		pos->y = rand() % (COLORSPACEDOWN - COLORSPACEUP) + COLORSPACEUP;
+		pos->theta = rand() / double(RAND_MAX) * PI;
+	} while (!IsInLimits(pos));
 	return GT_RES_OK;
 }
 
@@ -198,6 +222,16 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 		out.close();
 
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
+		Pose3D Pos3Dtmp1, Pos3Dtmp2;
+		GraspPose postmp1, postmp2;
+		float length = COLORGRAPHHEIGHT / 3.0;
+		postmp1.x = m_ppos->first.x - length*cos(m_ppos->first.theta);
+		postmp1.y = m_ppos->first.y - length*sin(m_ppos->first.theta);
+		postmp2.x = m_ppos->first.x + length*cos(m_ppos->first.theta);
+		postmp2.y = m_ppos->first.y + length*sin(m_ppos->first.theta);
+		m_pKinect->ColorDepth2Robot(postmp1, Pos3Dtmp1);
+		m_pKinect->ColorDepth2Robot(postmp2, Pos3Dtmp2);
+		pos->z = (pos->z + Pos3Dtmp1.z + Pos3Dtmp2.z) / 3.0;
 		m_pposes->clear();
 
 		delete Subgraph->ColorImg;
