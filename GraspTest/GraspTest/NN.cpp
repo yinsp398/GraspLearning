@@ -41,7 +41,7 @@ NN::~NN()
 
 bool IsInLimits(GraspPose *pos)
 {
-	float len = COLORGRAPHHEIGHT;
+	float len = COLORGRAPHHEIGHT / 3.0;
 	if (pos->x + fabs(len*cos(pos->theta)) > COLORSPACERIGHT)
 	{
 		return false;
@@ -222,16 +222,22 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 		out.close();
 
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
-		Pose3D Pos3Dtmp1, Pos3Dtmp2;
-		GraspPose postmp1, postmp2;
-		float length = COLORGRAPHHEIGHT / 3.0;
-		postmp1.x = m_ppos->first.x - length*cos(m_ppos->first.theta);
-		postmp1.y = m_ppos->first.y - length*sin(m_ppos->first.theta);
-		postmp2.x = m_ppos->first.x + length*cos(m_ppos->first.theta);
-		postmp2.y = m_ppos->first.y + length*sin(m_ppos->first.theta);
+		Pose3D Pos3Dtmp1, Pos3Dtmp2, Pos3Dtmp3, Pos3Dtmp4;
+		GraspPose postmp1, postmp2, postmp3, postmp4;
+		float length1 = COLORGRAPHHEIGHT / 3.0, length2 = COLORGRAPHHEIGHT / 2.0;
+		postmp1.x = m_ppos->first.x - length1*cos(m_ppos->first.theta);
+		postmp1.y = m_ppos->first.y - length1*sin(m_ppos->first.theta);
+		postmp2.x = m_ppos->first.x + length1*cos(m_ppos->first.theta);
+		postmp2.y = m_ppos->first.y + length1*sin(m_ppos->first.theta);
+		postmp3.x = m_ppos->first.x + length2*cos(m_ppos->first.theta);
+		postmp3.y = m_ppos->first.y + length2*sin(m_ppos->first.theta);
+		postmp4.x = m_ppos->first.x - length2*cos(m_ppos->first.theta);
+		postmp4.y = m_ppos->first.y - length2*sin(m_ppos->first.theta);
 		m_pKinect->ColorDepth2Robot(postmp1, Pos3Dtmp1);
 		m_pKinect->ColorDepth2Robot(postmp2, Pos3Dtmp2);
-		pos->z = (pos->z + Pos3Dtmp1.z + Pos3Dtmp2.z) / 3.0;
+		m_pKinect->ColorDepth2Robot(postmp3, Pos3Dtmp3);
+		m_pKinect->ColorDepth2Robot(postmp4, Pos3Dtmp4);
+		pos->z = (pos->z + Pos3Dtmp1.z + Pos3Dtmp2.z + Pos3Dtmp3.z + Pos3Dtmp4.z) / 5.0;
 		m_pposes->clear();
 
 		delete Subgraph->ColorImg;

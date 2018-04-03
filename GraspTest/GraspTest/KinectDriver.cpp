@@ -248,10 +248,10 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	RightUp = &m_pColorInCameraSpace[ColorUp*COLORWIDTH + ColorRight];
 	RightDown = &m_pColorInCameraSpace[ColorDown*COLORWIDTH + ColorRight];
 	int CameraLeft, CameraRight, CameraUp, CameraDown;
-	CameraLeft = (int)(max(LeftUp->X, LeftDown->X)*1000+1);
-	CameraRight = (int)(min(RightUp->X, RightDown->X) * 1000);
-	CameraUp = (int)(min(LeftUp->Y, RightUp->Y) * 1000);
-	CameraDown = (int)(max(LeftDown->Y, RightDown->Y) * 1000+1);
+	CameraLeft = (int)(min(LeftUp->X, LeftDown->X)*1000+1);
+	CameraRight = (int)(max(RightUp->X, RightDown->X) * 1000);
+	CameraUp = (int)(max(LeftUp->Y, RightUp->Y) * 1000);
+	CameraDown = (int)(min(LeftDown->Y, RightDown->Y) * 1000+1);
 	m_CloudHeightBias = CameraDown;
 	m_CloudWidthBias = CameraLeft;
 	m_CloudHeight = (CameraUp - CameraDown) / CLOUDRESOLUTION;

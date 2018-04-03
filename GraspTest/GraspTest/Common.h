@@ -77,6 +77,8 @@
 #define		CLOUDFORMAT						CV_8UC1						//点云图像在cv mat 中的存储格式，8位，一个通道的灰度图
 #define		CLOUDRESOLUTION					2							//点云图的分辨率精度，单位mm/pixel
 #define		DEPTHMEANCNT					10							//深度图取平均的图片张数
+#define		CLOUDDEPTHBIAS					0.85
+#define		CLOUDDEPTHMUL					1.7
 
 struct GraspPose
 {
