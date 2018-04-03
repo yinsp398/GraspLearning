@@ -157,6 +157,7 @@ GT_RES	NN::GetRandomPose(GraspPose * pos)
 		pos->y = rand() % (COLORSPACEDOWN - COLORSPACEUP) + COLORSPACEUP;
 		pos->theta = rand() / double(RAND_MAX) * PI;
 	} while (!IsInLimits(pos));
+
 	return GT_RES_OK;
 }
 
@@ -222,22 +223,32 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 		out.close();
 
 		res = m_pKinect->ColorDepth2Robot(m_ppos->first, *pos);
-		Pose3D Pos3Dtmp1, Pos3Dtmp2, Pos3Dtmp3, Pos3Dtmp4;
-		GraspPose postmp1, postmp2, postmp3, postmp4;
+		Pose3D Pos3Dtmp[8];
+		GraspPose postmp[8];
 		float length1 = COLORGRAPHHEIGHT / 3.0, length2 = COLORGRAPHHEIGHT / 2.0;
-		postmp1.x = m_ppos->first.x - length1*cos(m_ppos->first.theta);
-		postmp1.y = m_ppos->first.y - length1*sin(m_ppos->first.theta);
-		postmp2.x = m_ppos->first.x + length1*cos(m_ppos->first.theta);
-		postmp2.y = m_ppos->first.y + length1*sin(m_ppos->first.theta);
-		postmp3.x = m_ppos->first.x + length2*cos(m_ppos->first.theta);
-		postmp3.y = m_ppos->first.y + length2*sin(m_ppos->first.theta);
-		postmp4.x = m_ppos->first.x - length2*cos(m_ppos->first.theta);
-		postmp4.y = m_ppos->first.y - length2*sin(m_ppos->first.theta);
-		m_pKinect->ColorDepth2Robot(postmp1, Pos3Dtmp1);
-		m_pKinect->ColorDepth2Robot(postmp2, Pos3Dtmp2);
-		m_pKinect->ColorDepth2Robot(postmp3, Pos3Dtmp3);
-		m_pKinect->ColorDepth2Robot(postmp4, Pos3Dtmp4);
-		pos->z = (pos->z + Pos3Dtmp1.z + Pos3Dtmp2.z + Pos3Dtmp3.z + Pos3Dtmp4.z) / 5.0;
+		float length3 = (length1 + length2) / 2;
+		postmp[0].x = m_ppos->first.x - length1*cos(m_ppos->first.theta);
+		postmp[0].y = m_ppos->first.y - length1*sin(m_ppos->first.theta);
+		postmp[1].x = m_ppos->first.x - length2*cos(m_ppos->first.theta);
+		postmp[1].y = m_ppos->first.y - length2*sin(m_ppos->first.theta);
+		postmp[2].x = m_ppos->first.x - length3*cos(m_ppos->first.theta);
+		postmp[2].y = m_ppos->first.y - length3*sin(m_ppos->first.theta + 0.0828);
+		postmp[3].x = m_ppos->first.x - length3*cos(m_ppos->first.theta);
+		postmp[3].y = m_ppos->first.y - length3*sin(m_ppos->first.theta - 0.0828);
+		postmp[4].x = m_ppos->first.x + length1*cos(m_ppos->first.theta);
+		postmp[4].y = m_ppos->first.y + length1*sin(m_ppos->first.theta);
+		postmp[5].x = m_ppos->first.x + length2*cos(m_ppos->first.theta);
+		postmp[5].y = m_ppos->first.y + length2*sin(m_ppos->first.theta);
+		postmp[6].x = m_ppos->first.x + length3*cos(m_ppos->first.theta);
+		postmp[6].y = m_ppos->first.y + length3*sin(m_ppos->first.theta + 0.0828);
+		postmp[7].x = m_ppos->first.x + length3*cos(m_ppos->first.theta);
+		postmp[7].y = m_ppos->first.y + length3*sin(m_ppos->first.theta - 0.0828);
+		for (int i = 0; i < 8; i++)
+		{
+			m_pKinect->ColorDepth2Robot(postmp[i], Pos3Dtmp[i]);
+			if (Pos3Dtmp[i].z > pos->z)
+				pos->z = Pos3Dtmp[i].z;
+		}
 		m_pposes->clear();
 
 		delete Subgraph->ColorImg;
