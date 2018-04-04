@@ -59,14 +59,14 @@ public:
 	//从彩色位置给出点云图中位置
 	GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsigned int ColorposY, unsigned int &Cloudx, unsigned int &Cloudy);
 
+	//转换深度图到Mat格式
+	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
 private:
 
 	//获取彩色图像
 	GT_RES	GetColorImage(RGBQUAD *ColorImg);
 
 
-	//转换深度图到Mat格式
-	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
 
 	//转换彩色图到Mat格式
 	GT_RES	RGBConvertMat(const RGBQUAD* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
