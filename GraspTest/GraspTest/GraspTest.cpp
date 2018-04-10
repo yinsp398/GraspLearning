@@ -43,6 +43,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	Graph = new Graphics;
 	Graph->CloudPointsImg = new cv::Mat;
 	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	Graph->DepthImg = NULL;
 	Kinect = new KinectDriver;
 	//Load and save image from Kinect
 	Sleep(5000);

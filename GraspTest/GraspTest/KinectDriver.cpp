@@ -213,15 +213,16 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	{
 		DepthImg[j] = (UINT16)(DepthImg[j] + 0.5);
 	}
-	/*
-	res = DepthConvertMat(DepthImg, DEPTHWIDTH, DEPTHHEIGHT, Graph->DepthImg);
-	if (res != GT_RES_OK)
+	if (Graph->DepthImg)
 	{
-		printf("DepthConvertMat failed!\n");
-		delete[]ColorImg;
-		return res;
+		res = DepthConvertMat(DepthImg, DEPTHWIDTH, DEPTHHEIGHT, Graph->DepthImg);
+		if (res != GT_RES_OK)
+		{
+			printf("DepthConvertMat failed!\n");
+			delete[]ColorImg;
+			return res;
+		}
 	}
-	*/
 	//Get CloudPointsImg
 	//Get CameraSpacePoint map to Colorframe
 	if (m_pColorInCameraSpace)

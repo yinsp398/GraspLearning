@@ -387,9 +387,17 @@ bool TestSaveMoreThanOneImage()
 	m_pGraph = new Graphics;
 	m_pGraph->DepthImg = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
 	m_pGraph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
+	m_pGraph->CloudPointsImg = new cv::Mat;
+	UINT16 *depthimg = new UINT16[DEPTHHEIGHT*DEPTHWIDTH];
+	cv::Mat *depthmat = new cv::Mat(DEPTHHEIGHT, DEPTHWIDTH, DEPTHFORMAT);
+	cv::Mat DepthInBYTEImg1(DEPTHHEIGHT, DEPTHWIDTH, COLORFORMAT);
 	//Get the Kinect image(Color & depth & depth in color frame)
-
-	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready													
+	Sleep(3000);													//Kinect initializing need time, so wait 2sencods to make sure Kinect is ready
+	m_pKinect->GetDepthImage(depthimg);
+	m_pKinect->DepthConvertMat(depthimg,DEPTHWIDTH,DEPTHHEIGHT,depthmat);
+	GetBYTEformat(depthmat, &DepthInBYTEImg1);
+	cv::imwrite("Depth1.jpg", *depthmat);
+	cv::imwrite("DepthInBYTEImg1.jpg", DepthInBYTEImg1);
 	for (int i = 0; i < 1; i++)
 	{
 		res = GT_RES_ERROR;
@@ -698,20 +706,27 @@ bool TestShowImage()
 	pos.x = (COLORSPACELEFT + COLORSPACERIGHT) / 2.0;
 	pos.y = (COLORSPACEUP + COLORSPACEDOWN) / 2.0;
 	cv::Point center(cvRound(pos.x), cvRound(pos.y));
-	cv::circle(*(m_pGraph->ColorImg), center, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
+	//cv::circle(*(m_pGraph->ColorImg), center, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
 	cv::Rect rect1(pos.x - (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, pos.y - (COLORSPACEDOWN - COLORSPACEUP) / 2.0, (COLORSPACERIGHT - COLORSPACELEFT), (COLORSPACEDOWN - COLORSPACEUP));
 	cv::namedWindow("color", CV_WINDOW_NORMAL);
 	cv::imshow("color", (*(m_pGraph->ColorImg))(rect1));
+	cv::imwrite("color.jpg", (*(m_pGraph->ColorImg))(rect1));
 
 	float Dx, Dy;
 	m_pKinect->Colorpos2Depthpos(pos.x, pos.y, Dx, Dy);
 	cv::Point center2(cvRound(Dx), cvRound(Dy));
-	cv::circle(*(m_pGraph->DepthImg), center2, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
+	//cv::circle(*(m_pGraph->DepthImg), center2, 13, cv::Scalar(0, 255, 0), 3, 8, 0);
 	cv::Rect rect2(Dx - (COLORSPACERIGHT - COLORSPACELEFT) / 4.0, Dy - (COLORSPACEDOWN - COLORSPACEUP) / 4.0, (COLORSPACERIGHT - COLORSPACELEFT) / 2.0, (COLORSPACEDOWN - COLORSPACEUP) / 2.0);
 	cv::Mat img(m_pGraph->DepthImg->rows, m_pGraph->DepthImg->cols, COLORFORMAT);
 	GetBYTEformat((m_pGraph->DepthImg),&img);
 	cv::namedWindow("depth", CV_WINDOW_NORMAL);
 	cv::imshow("depth", img(rect2));
+	cv::imwrite("depth.jpg", img(rect2));
+
+	cv::namedWindow("CloudPoints", CV_WINDOW_AUTOSIZE);
+	cv::imshow("CloudPoints", (*m_pGraph->CloudPointsImg));
+	cv::imwrite("CloudPoints.jpg", (*m_pGraph->CloudPointsImg));
+
 	cv::waitKey(0);
 
 
@@ -843,8 +858,8 @@ bool TestErrorUR5(int Num)
 
 int main()
 {
-	TestShowImage();
-	//TestSaveMoreThanOneImage();
+	//TestShowImage();
+	TestSaveMoreThanOneImage();
 	//TestMoveCalibration();
 	//TestVerifyTransMat();
     return 0;
