@@ -1,0 +1,346 @@
+name: "GQCNN"
+layer{
+	name:"DexNet-CloudPoints"
+	type:"Data"
+	top:"data"
+	top:"label"
+	transform_param{
+		mirror:1
+		mean_file:"data/DexNet/MeanImg.binaryproto"
+	}
+	data_param{
+		source:"data/DexNet/DexNetTrainlmdb"
+		batch_size:64
+		backend:LMDB
+	}
+}
+layer{
+	name:"DexNet-Pose"
+	type:"Data"
+	top:"Depth"
+	transform_param{
+		mean_file:"data/DexNet/MeanPos.binaryproto"
+	}
+	data_param{
+		source:"data/DexNet/DexNetTrainPoslmdb"
+		batch_size:64
+		backend:LMDB
+	}
+}
+layer {
+  name: "DexNet-pc1"
+  type: "InnerProduct"
+  bottom: "Depth"
+  top: "pc1"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 16
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "DexNet-relu1"
+  type: "ReLU"
+  bottom: "pc1"
+  top: "pc1"
+}
+layer{
+	name:"DexNet-conv1-1"
+	type:"Convolution"
+	bottom:"data"
+	top:"conv1-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:7
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "DexNet-relu1-1"
+  type: "ReLU"
+  bottom: "conv1-1"
+  top: "conv1-1"
+}
+
+layer{
+	name:"DexNet-conv1-2"
+	type:"Convolution"
+	bottom:"conv1-1"
+	top:"conv1-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:5
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "DexNet-relu1-2"
+  type: "ReLU"
+  bottom: "conv1-2"
+  top: "conv1-2"
+}
+layer {
+  name: "DexNet-pool1"
+  type: "Pooling"
+  bottom: "conv1-2"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer{
+	name:"DexNet-LRN1"
+	type:"LRN"
+	bottom:"pool1"
+	top:"LRN1"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+		engine : CUDNN
+	}
+}
+
+layer{
+	name:"DexNet-conv2-1"
+	type:"Convolution"
+	bottom:"LRN1"
+	top:"conv2-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "DexNet-relu2-1"
+  type: "ReLU"
+  bottom: "conv2-1"
+  top: "conv2-1"
+}
+
+layer{
+	name:"DexNet-conv2-2"
+	type:"Convolution"
+	bottom:"conv2-1"
+	top:"conv2-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "DexNet-relu2-2"
+  type: "ReLU"
+  bottom: "conv2-2"
+  top: "conv2-2"
+}
+
+layer{
+	name:"DexNet-LRN2"
+	type:"LRN"
+	bottom:"conv2-2"
+	top:"LRN2"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+		engine : CUDNN
+	}
+}
+layer {
+  name: "DexNet-fc3"
+  type: "InnerProduct"
+  bottom: "LRN2"
+  top: "fc3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "DexNet-relu3"
+  type: "ReLU"
+  bottom: "fc3"
+  top: "fc3"
+}
+
+layer{
+	name:"DexNet-Concat"
+	type:"Concat"
+	bottom:"fc3"
+	bottom:"pc1"
+	top:"Concat"
+	concat_param{
+		axis:1
+	}
+}
+layer {
+  name: "DexNet-fc4"
+  type: "InnerProduct"
+  bottom: "Concat"
+  top: "fc4"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "DexNet-relu4"
+  type: "ReLU"
+  bottom: "fc4"
+  top: "fc4"
+}
+layer {
+  name: "DexNet-fc5"
+  type: "InnerProduct"
+  bottom: "fc4"
+  top: "fc5"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "DexNet-accuracy"
+  type: "Accuracy"
+  bottom: "fc5"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "DexNet-loss"
+  type: "SoftmaxWithLoss"
+  bottom: "fc5"
+  bottom: "label"
+  top: "loss"
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
