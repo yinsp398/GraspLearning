@@ -1,0 +1,3 @@
+FilePos:4294967295
+ImgCnt:13171
+base_lr:0.01

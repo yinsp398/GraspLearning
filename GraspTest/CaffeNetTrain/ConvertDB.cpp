@@ -73,12 +73,12 @@ bool addto_dataset(const char* image_rootpath, const char* image_file, const int
 
 unsigned int SaveConvert(const char* image_filepath, const char* label_filename, 
 	const char* dbColor_path, const char* dbDepth_path, 
-	const std::string& db_backend, unsigned int &FilePos, 
+	const std::string& db_backend, unsigned long &FilePos, 
 	const std::string &meancolorfile, const std::string &meandepthfile)
 {
 	const bool FLAGS_shuffle = true;
-	const bool FLAGS_is_color = true;
-	const bool FLAGS_encoded = true;
+	const bool FLAGS_is_color = false;
+	const bool FLAGS_encoded = false;
 	const std::string FLAGS_encode_type = "";
 	const int FLAGS_resize_height = 0;
 	const int FLAGS_resize_width = 0;
@@ -96,6 +96,11 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 		lines.push_back(std::make_pair(line.substr(0, pos), label));
 	}
 	FilePos = infile.tellg();
+	if (lines.size() == 0)
+	{
+		printf("Have no new image!\n");
+		return 0;
+	}
 
 	if (FLAGS_shuffle)
 	{
@@ -131,22 +136,25 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 
 	for (int line_id = 0; line_id < lines.size(); ++line_id)
 	{
-		bool status;
+		bool status1,status2;
 		std::string enc = FLAGS_encode_type;
 		if (FLAGS_encoded && !enc.size())
 		{
 			// Guess the encoding type from the file name
-			std::string fn = lines[line_id].first;
+			std::string fn = lines[line_id].first + ".jpg";
 			size_t p = fn.rfind('.');
 			if (p == fn.npos)
 				LOG(WARNING) << "Failed to guess the encoding of '" << fn << "'";
 			enc = fn.substr(p);
 			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 		}
-		status = ReadImageToDatum(root_folder + "Color\\" + lines[line_id].first + ".jpg",
+		status1 = ReadImageToDatum(root_folder + "Color\\" + lines[line_id].first + ".jpg",
 			lines[line_id].second, resize_height, resize_width, FLAGS_is_color,
 			enc, &datumColor);
-		if (status == false)
+		status2 = ReadImageToDatum(root_folder + "CloudPoints\\" + lines[line_id].first + ".jpg",
+			lines[line_id].second, resize_height, resize_width, FLAGS_is_color,
+			enc, &datumDepth);
+		if (status1 == false || status2 == false)
 			continue;
 
 		//Check size
