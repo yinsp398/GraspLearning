@@ -31,10 +31,12 @@
 
 #define		COUNT_TIMEOUT					100							//设置NN的超时次数
 #define		TIME_TOWAIT						150000						//设置UR5和kinect的超时时间15000
+#define		TIME_UPDATEPARAM				1000						//更新caffemodel参数的时间
 
-#define		MODELFILE						"test1"						//caffeNet的模型文件
-#define		TRAINEDFILE						"test13"					//训练好的参数文件
-#define		MEANFILE						"test2"						//平均值文件
+#define		MODELFILE						"../model/Grasp_train_test_deploy.prototxt"								//caffeNet的模型文件
+#define		TRAINEDFILE						"../model/Grasp_iter_1000.caffemodel"									//训练好的参数文件
+#define		MEANFILE1						"../imageset/MeanFile/meandepth.binaryproto"						//color平均值文件
+#define		MEANFILE2						"../imageset/MeanFile/meancolor.binaryproto"						//cloudpoints平均值文件
 
 #define		COLORSPACEUP					535							//彩色空间（二维）约束的上边界
 #define		COLORSPACEDOWN					760							//下边界
@@ -54,7 +56,7 @@
 
 #define		IMAGEPATH						"../imageset/Color/"		//用于存储图像数据的路径
 #define		DEPTHPATH						"../imageset/Depth/"		//用于存储深度数据的路径
-#define		CLOUDPATH						"../imageset/CloudPoints/"		//用于存储深度数据的路径
+#define		CLOUDPATH						"../imageset/CloudPoints/"	//用于存储深度数据的路径
 #define		PREDICTPATH						"../imageset/Predict.txt"	//预测每次抓取的成功率的文件路径
 #define		RESULTPATH						"../imageset/Result.txt"	//每次抓取结果的文件路径
 

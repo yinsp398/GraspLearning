@@ -1,0 +1,1 @@
+caffe-d.exe test -model ..\model\Grasp_train_test.prototxt -weights ..\model\Grasp_iter_1000.caffemodel -iterations 300 -gpu 0

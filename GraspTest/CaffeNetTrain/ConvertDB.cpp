@@ -73,7 +73,7 @@ bool addto_dataset(const char* image_rootpath, const char* image_file, const int
 
 unsigned int SaveConvert(const char* image_filepath, const char* label_filename, 
 	const char* dbColor_path, const char* dbDepth_path, 
-	const std::string& db_backend, unsigned long &FilePos, 
+	const std::string& db_backend, unsigned long &FilePos, unsigned int &Label,
 	const std::string &meancolorfile, const std::string &meandepthfile)
 {
 	const bool FLAGS_shuffle = true;
@@ -88,13 +88,15 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 	std::string line;
 	size_t pos;
 	int label;
-	infile.seekg(FilePos);
+	infile.seekg(FilePos, std::ios::beg);
 	while (std::getline(infile, line))
 	{
 		pos = line.find_last_of(' ');
 		label = atoi(line.substr(pos + 1).c_str());
 		lines.push_back(std::make_pair(line.substr(0, pos), label));
 	}
+	infile.clear();
+	infile.seekg(0, std::ios::end);
 	FilePos = infile.tellg();
 	if (lines.size() == 0)
 	{
@@ -141,17 +143,21 @@ unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 		if (FLAGS_encoded && !enc.size())
 		{
 			// Guess the encoding type from the file name
-			std::string fn = lines[line_id].first + ".jpg";
+			std::string fn = lines[line_id].first;// +".jpg";
 			size_t p = fn.rfind('.');
 			if (p == fn.npos)
 				LOG(WARNING) << "Failed to guess the encoding of '" << fn << "'";
 			enc = fn.substr(p);
 			std::transform(enc.begin(), enc.end(), enc.begin(), ::tolower);
 		}
-		status1 = ReadImageToDatum(root_folder + "Color\\" + lines[line_id].first + ".jpg",
+		if (lines[line_id].second == 1)
+		{
+			Label++;
+		}
+		status1 = ReadImageToDatum(root_folder + "Color\\" + lines[line_id].first /*+ ".jpg"*/,
 			lines[line_id].second, resize_height, resize_width, FLAGS_is_color,
 			enc, &datumColor);
-		status2 = ReadImageToDatum(root_folder + "CloudPoints\\" + lines[line_id].first + ".jpg",
+		status2 = ReadImageToDatum(root_folder + "CloudPoints\\" + lines[line_id].first /*+ ".jpg"*/,
 			lines[line_id].second, resize_height, resize_width, FLAGS_is_color,
 			enc, &datumDepth);
 		if (status1 == false || status2 == false)

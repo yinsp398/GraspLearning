@@ -3,7 +3,7 @@
 #include <string>
 unsigned int SaveConvert(const char* image_filepath, const char* label_filename,
 	const char* dbColor_path, const char* dbDepth_path,
-	const std::string& db_backend, unsigned long &FilePos,
+	const std::string& db_backend, unsigned long &FilePos,unsigned int &Label,
 	const std::string &meancolorfile, const std::string &meandepthfile);
 bool addto_dataset(const char* image_rootpath, const char* image_file, const int label, const char* db_path, const std::string& db_backend);
 void convert_dataset(const char* image_filepath, const char* label_filename, const char* db_path, const std::string& db_backend);

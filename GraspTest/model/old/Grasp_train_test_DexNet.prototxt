@@ -1,0 +1,504 @@
+name: "GraspNet"
+layer {
+	name: "Color_data"
+	type: "Data"
+	top: "Color_data"
+	top: "label"
+	data_param {
+		source: "../ImageSet/lmdbcolor"
+		batch_size: 64
+		backend:LMDB
+	}
+	transform_param {
+		mirror:1
+		mean_file: "../ImageSet/MeanFile/meancolor.binaryproto"
+	}
+}
+layer{
+	name:"Color_conv1-1"
+	type:"Convolution"
+	bottom:"Color_data"
+	top:"Color_conv1-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:7
+		stride:2
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "Color_relu1-1"
+  type: "ReLU"
+  bottom: "Color_conv1-1"
+  top: "Color_conv1-1"
+}
+
+layer{
+	name:"Color_conv1-2"
+	type:"Convolution"
+	bottom:"Color_conv1-1"
+	top:"Color_conv1-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:5
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "Color_relu1-2"
+  type: "ReLU"
+  bottom: "Color_conv1-2"
+  top: "Color_conv1-2"
+}
+layer {
+  name: "Color_pool1"
+  type: "Pooling"
+  bottom: "Color_conv1-2"
+  top: "Color_pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer{
+	name:"Color_LRN1"
+	type:"LRN"
+	bottom:"Color_pool1"
+	top:"Color_LRN1"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+	}
+}
+
+layer{
+	name:"Color_conv2-1"
+	type:"Convolution"
+	bottom:"Color_LRN1"
+	top:"Color_conv2-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "Color_relu2-1"
+  type: "ReLU"
+  bottom: "Color_conv2-1"
+  top: "Color_conv2-1"
+}
+
+layer{
+	name:"Color_conv2-2"
+	type:"Convolution"
+	bottom:"Color_conv2-1"
+	top:"Color_conv2-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "Color_relu2-2"
+  type: "ReLU"
+  bottom: "Color_conv2-2"
+  top: "Color_conv2-2"
+}
+
+layer{
+	name:"Color_LRN2"
+	type:"LRN"
+	bottom:"Color_conv2-2"
+	top:"Color_LRN2"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+	}
+}
+layer {
+  name: "Color_fc3"
+  type: "InnerProduct"
+  bottom: "Color_LRN2"
+  top: "Color_fc3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+
+layer {
+  name: "Color_relu3"
+  type: "ReLU"
+  bottom: "Color_fc3"
+  top: "Color_fc3"
+}
+layer {
+  name: "Color_drop3"
+  type: "Dropout"
+  bottom: "Color_fc3"
+  top: "Color_fc3"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer{
+	name:"DexNet-CloudPoints"
+	type:"Data"
+	top:"data"
+	transform_param{
+		mirror:1
+		mean_file:"../ImageSet/MeanFile/meandepth.binaryproto"
+	}
+	data_param{
+		source:"../ImageSet/lmdbdepth"
+		batch_size:64
+		backend:LMDB
+	}
+}
+layer{
+	name:"DexNet-conv1-1"
+	type:"Convolution"
+	bottom:"data"
+	top:"conv1-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:7
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "DexNet-relu1-1"
+  type: "ReLU"
+  bottom: "conv1-1"
+  top: "conv1-1"
+}
+
+layer{
+	name:"DexNet-conv1-2"
+	type:"Convolution"
+	bottom:"conv1-1"
+	top:"conv1-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:5
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "DexNet-relu1-2"
+  type: "ReLU"
+  bottom: "conv1-2"
+  top: "conv1-2"
+}
+layer {
+  name: "DexNet-pool1"
+  type: "Pooling"
+  bottom: "conv1-2"
+  top: "pool1"
+  pooling_param {
+    pool: MAX
+    kernel_size: 2
+    stride: 2
+  }
+}
+layer{
+	name:"DexNet-LRN1"
+	type:"LRN"
+	bottom:"pool1"
+	top:"LRN1"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+	}
+}
+
+layer{
+	name:"DexNet-conv2-1"
+	type:"Convolution"
+	bottom:"LRN1"
+	top:"conv2-1"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+
+layer {
+  name: "DexNet-relu2-1"
+  type: "ReLU"
+  bottom: "conv2-1"
+  top: "conv2-1"
+}
+
+layer{
+	name:"DexNet-conv2-2"
+	type:"Convolution"
+	bottom:"conv2-1"
+	top:"conv2-2"
+	param{
+		lr_mult:1
+	}
+	param{
+		lr_mult:2
+	}
+	convolution_param{
+		num_output:64
+		kernel_size:3
+		stride:1
+		weight_filler{
+			type:"xavier"
+		}
+		bias_filler{
+			type:"constant"
+		}
+	}
+}
+layer {
+  name: "DexNet-relu2-2"
+  type: "ReLU"
+  bottom: "conv2-2"
+  top: "conv2-2"
+}
+
+layer{
+	name:"DexNet-LRN2"
+	type:"LRN"
+	bottom:"conv2-2"
+	top:"LRN2"
+	lrn_param{
+		alpha : 2.0e-05
+		beta : 0.75
+		local_size : 5
+		norm_region : WITHIN_CHANNEL
+	}
+}
+layer {
+  name: "DexNet-fc3"
+  type: "InnerProduct"
+  bottom: "LRN2"
+  top: "fc3"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "DexNet-relu3"
+  type: "ReLU"
+  bottom: "fc3"
+  top: "fc3"
+}
+layer {
+  name: "drop3"
+  type: "Dropout"
+  bottom: "fc3"
+  top: "fc3"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+
+layer{
+	name:"Grasp_Concat"
+	type:"Concat"
+	bottom:"fc3"
+	bottom:"Color_fc3"
+	top:"Concat"
+	concat_param{
+		axis:1
+	}
+}
+
+layer {
+  name: "Grasp_fc4"
+  type: "InnerProduct"
+  bottom: "Concat"
+  top: "Grasp_fc4"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 1024
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "Grasp_relu4"
+  type: "ReLU"
+  bottom: "Grasp_fc4"
+  top: "Grasp_fc4"
+}
+layer {
+  name: "Grasp_drop4"
+  type: "Dropout"
+  bottom: "Grasp_fc4"
+  top: "Grasp_fc4"
+  dropout_param {
+    dropout_ratio: 0.5
+  }
+}
+layer {
+  name: "Grasp_fc5"
+  type: "InnerProduct"
+  bottom: "Grasp_fc4"
+  top: "Grasp_fc5"
+  param {
+    lr_mult: 1
+  }
+  param {
+    lr_mult: 2
+  }
+  inner_product_param {
+    num_output: 2
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "Grasp_accuracy"
+  type: "Accuracy"
+  bottom: "Grasp_fc5"
+  bottom: "label"
+  top: "accuracy"
+  include {
+    phase: TEST
+  }
+}
+layer {
+  name: "Grasp_loss"
+  type: "SoftmaxWithLoss"
+  bottom: "Grasp_fc5"
+  bottom: "label"
+  top: "loss"
+}
+

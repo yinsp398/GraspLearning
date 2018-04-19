@@ -200,14 +200,14 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 		if (res != GT_RES_OK)
 		{
 			printf("GetDepthImg failed!\n");
-			delete[]ColorImg;
-			return res;
+			i--;
+			continue;
 		}
 		for (int j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
 		{
 			DepthSum[j] += (float)(DepthImg[j]) / DEPTHMEANCNT;
 		}
-		Sleep(100);
+		Sleep(300);
 	}
 	for (int j = 0; j < DEPTHWIDTH*DEPTHHEIGHT; j++)
 	{
@@ -406,6 +406,19 @@ GT_RES	KinectDriver::GetKinectImage(Graphics *Graph)
 	return res;
 }
 
+GT_RES	KinectDriver::GetMatrixCoordinate(CameraSpacePoint *ColorInCameraSpace, int &WidthBias, int &HeightBias)
+{
+	if (ColorInCameraSpace == NULL || m_pColorInCameraSpace == NULL)
+	{
+		printf("ColorInCameraSpace is empty.\n");
+		return GT_RES_ERROR;
+	}
+	memcpy(ColorInCameraSpace, m_pColorInCameraSpace, COLORWIDTH*COLORHEIGHT * sizeof(CameraSpacePoint));
+	WidthBias = m_CloudWidthBias;
+	HeightBias = m_CloudHeightBias;
+	return GT_RES_OK;
+}
+
 GT_RES	KinectDriver::DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg)
 {
 	for (size_t i = 0; i < nHeight; i++)
@@ -490,8 +503,10 @@ GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsig
 	{
 		return res;
 	}
-	Cloudx = (unsigned int)((Camerapos.X * 1000 - m_CloudWidthBias) / CLOUDRESOLUTION + 0.5);
-	Cloudy = m_CloudHeight - 1 - (unsigned int)((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5);
+	if (Camerapos.X * 1000 - m_CloudWidthBias < 0 || Camerapos.Y * 1000 - m_CloudHeightBias < 0)
+		return GT_RES_ERROR;
+	Cloudx = (unsigned int)(max(((Camerapos.X * 1000 - m_CloudWidthBias) / CLOUDRESOLUTION + 0.5), 0));
+	Cloudy = m_CloudHeight - 1 - (unsigned int)(max(((Camerapos.Y * 1000 - m_CloudHeightBias) / CLOUDRESOLUTION + 0.5), 0));
 	return res;
 }
 

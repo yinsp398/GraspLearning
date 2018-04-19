@@ -12,7 +12,16 @@
 #include <process.h>
 #include <Windows.h>
 
+#ifndef _CameraSpacePoint_
+#define _CameraSpacePoint_
+typedef struct _CameraSpacePoint
+{
+	float X;
+	float Y;
+	float Z;
+} 	CameraSpacePoint;
 
+#endif // _CameraSpacePoint_
 
 //全局变量
 Graphics			*Graph = NULL;
@@ -20,11 +29,16 @@ KinectDriver		*Kinect = NULL;
 RobotDriver			*UR5 = NULL;
 NN					*NNet = NULL;
 Pose3D				*pos = NULL;
+CameraSpacePoint	*ColorInCameraSpace = NULL;
+int					WidthBias = 0;
+int					HeightBias = 0;
 bool				Success = false;
 HANDLE				HeventUR5 = NULL;
 HANDLE				HeventKinect = NULL;
 HANDLE				HeventNN = NULL;
 unsigned int		ImageCnt = 0;
+unsigned int		NewCnt = 0;
+unsigned int		GetCnt = 0;
 
 
 
@@ -35,6 +49,8 @@ GT_RES	InitGT(std::string Caffe_Path)
 	pos = new Pose3D;
 	std::cout << "输入图片标号起点：" << std::endl;
 	std::cin >> ImageCnt;
+	NewCnt = 0;
+	GetCnt = 0;
 	//分配event
 	HeventUR5 = CreateEvent(NULL, FALSE, FALSE, NULL);
 	HeventKinect = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -44,6 +60,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 	Graph->CloudPointsImg = new cv::Mat;
 	Graph->ColorImg = new cv::Mat(COLORHEIGHT, COLORWIDTH, COLORFORMAT);
 	Graph->DepthImg = NULL;
+	ColorInCameraSpace = new CameraSpacePoint[COLORWIDTH*COLORHEIGHT];
 	Kinect = new KinectDriver;
 	//Load and save image from Kinect
 	Sleep(5000);
@@ -53,7 +70,12 @@ GT_RES	InitGT(std::string Caffe_Path)
 		printf("Getting Kinect image failed with error:%02x\n",res_val);
 		return res_val;
 	}
-
+	res_val = Kinect->GetMatrixCoordinate(ColorInCameraSpace, WidthBias, HeightBias);
+	if (res_val != GT_RES_OK)
+	{
+		printf("Get Kinect Matrix failed with error:%02x\n", res_val);
+		return -1;
+	}
 	//初始化并启动UR5机器人
 	UR5 = new RobotDriver;
 	res_val = UR5->OpenUR();
@@ -63,7 +85,7 @@ GT_RES	InitGT(std::string Caffe_Path)
 		return res_val;
 	}
 	//初始化神经网络model
-	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE,Kinect);
+	NNet = new NN(MODELFILE,TRAINEDFILE,MEANFILE1,MEANFILE2);
 	if (NNet == NULL)
 	{
 		printf("Nueral Network Init failed with error:%02x.\n", res_val);
@@ -136,6 +158,8 @@ unsigned	__stdcall ThreadUR5(void *param)
 		printf("HeventUR5 have not initialized.\n");
 		return -1;
 	}
+	//set UR5 event
+	SetEvent(HeventUR5);
 	while (1)
 	{
 		//wait for NN event trigger
@@ -146,23 +170,32 @@ unsigned	__stdcall ThreadUR5(void *param)
 			return -1;
 		}
 		//UR5 move and grasp
+		
 		res = UR5->MoveGrasp(pos,&Success);
 		if (res != GT_RES_OK)
 		{
 			printf("UR5 MoveGrasp failed with error:%02x\n", res);
-			return -1;
+			while ((res = UR5->MoveGrasp(pos, &Success)) != GT_RES_OK)
+			{
+				;
+			}
 		}
+		NewCnt++;
 		if (Success)
-			std::cout << ImageCnt << ":" << pos->ToString() << " Get! " << std::endl;
+		{
+			GetCnt++;
+			std::cout << ImageCnt << ":" << /*pos->ToString() <<*/ " Get! ";
+		}
 		else
-			std::cout << ImageCnt << ":" <<  pos->ToString() <<" NotGet.." << std::endl;
+			std::cout << ImageCnt << ":" <<  /*pos->ToString() <<*/" NotGet..";
+		std::cout << "GraspPossibility:" << GetCnt*1.0 / NewCnt << std::endl;
 		//save the predicted possibility to file
 		std::ofstream out;
 		out.open(RESULTPATH, std::ios::app);
 		std::string str_tmp = std::to_string(ImageCnt);
 		if (5 > str_tmp.size())
 			str_tmp.insert(0, 5 - str_tmp.size(), '0');
-		out << str_tmp << " " << int(Success) << std::endl;
+		out << str_tmp << ".jpg " << int(Success) << std::endl;
 		out.close();
 
 		ImageCnt++;
@@ -188,8 +221,6 @@ unsigned	__stdcall	ThreadKinect(void *param)
 		printf("HeventUR5 have not initialized.\n");
 		return 0;
 	}
-	//set kinect event
-	SetEvent(HeventKinect);
 	while (1)
 	{
 		//wait for UR5 event trigger
@@ -200,10 +231,16 @@ unsigned	__stdcall	ThreadKinect(void *param)
 			return -1;
 		}
 		//get gray and depth data from kinect
-		res = Kinect->GetKinectImage(Graph); 
+		res = Kinect->GetKinectImage(Graph);
 		if (res != GT_RES_OK)
 		{
 			printf("Get Kinect Image failed with error:%02x\n", res);
+			return -1;
+		}
+		res = Kinect->GetMatrixCoordinate(ColorInCameraSpace, WidthBias, HeightBias);
+		if (res != GT_RES_OK)
+		{
+			printf("Get Kinect Matrix failed with error:%02x\n", res);
 			return -1;
 		}
 		//set kinect event
@@ -224,7 +261,7 @@ unsigned __stdcall ThreadNN(void *param)
 		printf("HeventUR5 have not initialized.\n");
 		return 0;
 	}
-	res = NNet->UpdateGraphics(Graph);
+	res = NNet->UpdateGraphics(Graph, ColorInCameraSpace, WidthBias, HeightBias);
 	if (res != GT_RES_OK)
 	{
 		printf("Update graphics failed with error:%02x\n", res);
@@ -238,15 +275,13 @@ unsigned __stdcall ThreadNN(void *param)
 		{
 			//if no kinect trigger ,then runNN;
 			count++;
-			Sleep(1000);
-			/*
 			res = NNet->NNRun();
 			if (res != GT_RES_OK)
 			{
 				printf("NNet run error:%02x!\n", res);
-				return -1;
+				continue;
 			}
-			*/
+			
 			//if count time out, so kinect is down.
 			if (count > COUNT_TIMEOUT)
 			{
@@ -256,17 +291,17 @@ unsigned __stdcall ThreadNN(void *param)
 			continue;
 		}
 		count = 0;
+		res = NNet->UpdateGraphics(Graph, ColorInCameraSpace, WidthBias, HeightBias);
+		if (res != GT_RES_OK)
+		{
+			printf("Update graphics failed with error:%02x\n", res);
+			return -1;
+		}
 		//GetPose
 		res = NNet->GetPose(pos,ImageCnt);
 		if (res != GT_RES_OK)
 		{
 			printf("Get NN Pose failed with error:%02x\n", res);
-			return -1;
-		}
-		res = NNet->UpdateGraphics(Graph);
-		if (res != GT_RES_OK)
-		{
-			printf("Update graphics failed with error:%02x\n", res);
 			return -1;
 		}
 		SetEvent(HeventNN);

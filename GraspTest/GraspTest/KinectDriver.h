@@ -8,7 +8,7 @@ struct IKinectSensor;
 struct IColorFrameReader;
 struct IDepthFrameReader;
 struct ICoordinateMapper;
-typedef struct _CameraSpacePoint CameraSpacePoint;
+typedef struct _CameraSpacePoint	CameraSpacePoint;
 typedef struct _DepthSpacePoint DepthSpacePoint;
 typedef struct _ColorSpacePoint ColorSpacePoint;
 typedef struct tagRGBQUAD RGBQUAD;
@@ -58,7 +58,8 @@ public:
 	GT_RES	GetDepthImage(UINT16 *DepthImg);
 	//从彩色位置给出点云图中位置
 	GT_RES	KinectDriver::Colorpos2Cloudpos(const unsigned int ColorposX, const unsigned int ColorposY, unsigned int &Cloudx, unsigned int &Cloudy);
-
+	
+	GT_RES	KinectDriver::GetMatrixCoordinate(CameraSpacePoint *ColorInCameraSpace, int &WidthBias, int &HeightBias);
 	//转换深度图到Mat格式
 	GT_RES	DepthConvertMat(const UINT16* pBuffer, const unsigned int nWidth, const unsigned int nHeight, cv::Mat *pImg);
 private:

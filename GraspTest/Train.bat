@@ -1,0 +1,1 @@
+caffe-d.exe train -solver ..\model\solver.prototxt
