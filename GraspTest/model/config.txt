@@ -1,5 +1,5 @@
-FilePos:0
-ImgCnt:0
+FilePos:61048
+ImgCnt:4696
 base_lr:0.001
-iteration:211
-Success:0
+iteration:481
+Success:2934

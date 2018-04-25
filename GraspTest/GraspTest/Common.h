@@ -25,7 +25,8 @@
 
 #define		PI								3.14159265359
 #define		POSE1							0.1,-0.2,0.25,PI,0,PI		//关键路径节点1
-#define		POSE2							0.2,-0.5,0.25,PI,0,PI		//关键路径节点2
+#define		POSE2							0.13,-0.5,0.15,PI,0,PI		//关键路径节点2
+#define		MINZ							0.02						//最小的z轴值
 #define		TCPPOSE							0.0,0.0,0.16,0.0,0.0,0.0	//TCP位置
 #define		PAYLOAD							1.0,0.0,0.0,0.05			//负载大小及重心位置
 

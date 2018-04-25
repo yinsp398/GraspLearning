@@ -365,6 +365,10 @@ GT_RES	NN::GetPose(Pose3D *pos, const unsigned int ImgCnt)
 				pos->z = Pos3Dtmp[i].z;
 			}
 		}
+		if (pos->z < MINZ)
+		{
+			pos->z = MINZ;
+		}
 		m_pposes->clear();
 		PosVecClear(m_ppos);
 		delete Subgraph->ColorImg;

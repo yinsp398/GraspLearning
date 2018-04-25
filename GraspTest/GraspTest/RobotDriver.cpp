@@ -73,10 +73,12 @@ GT_RES	RobotDriver::CloseUR()
 //移动到目标点并抓取
 GT_RES	RobotDriver::MoveGrasp(Pose3D *pos, bool *success)
 {
-	Pose3D pos1,pos2;
+	Pose3D pos1,pos2,pos3;
 	GT_RES res;
 	pos1.Set(POSE1);
 	pos2.Set(pos->x, pos->y, pos->z + 0.1, pos->Rx, pos->Ry, pos->Rz);
+	pos3.Set(POSE2);
+	pos3.Rz = rand()*1.0 / RAND_MAX*PI + ANGLEBIAS;
 	res = GripperOpen();
 	if (res != GT_RES_OK)
 	{
@@ -97,7 +99,7 @@ GT_RES	RobotDriver::MoveGrasp(Pose3D *pos, bool *success)
 	{
 		return res;
 	}
-	res = MovetoPose(&pos2);
+	res = MovetoPose(&pos3);
 	if (res != GT_RES_OK)
 	{
 		return res;
